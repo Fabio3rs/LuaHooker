@@ -12,7 +12,11 @@ CLuaH &CLuaH::Lua()
 
 bool CLuaH::loadFiles(const std::string &path)
 {
-
+	auto extension_from_filename = [](const std::string &fname)
+	{
+		size_t s;
+		return std::string((s = fname.find_last_of('.') != fname.npos)? &fname.c_str()[++s] : "");
+	};
 
 }
 
