@@ -13,6 +13,9 @@
 #include <ctime>
 #include <string>
 #include <cstddef>
+#include <vector>
+#include <deque>
+#include <map>
 #include <injector\injector.hpp>
 #include <injector\calling.hpp>
 #include <injector\assembly.hpp>

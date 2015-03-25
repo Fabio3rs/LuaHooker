@@ -21,25 +21,36 @@ bool CLuaH::loadFiles(const std::string &path)
 	HANDLE hFind;
 	WIN32_FIND_DATA data;
 
-	hFind = FindFirstFile("c:\\*.*", &data);
+	hFind = FindFirstFile((std::string("./") + path + "/*.lua").c_str(), &data);
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0
-				&& extension_from_filename(data.cFileName) == "lua")
+			if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 			{
-
+				luaScript lData;
+				lData.filePath = path;
+				lData.fileName = data.cFileName;
+				
+				files[lData.filePath][lData.fileName] = lData;
 			}
 		} while (FindNextFile(hFind, &data));
 		FindClose(hFind);
 	}
-
+	
+	return true;
 }
 
 CLuaH::CLuaH()
 {
-	inited = true;
+	if (L = luaL_newstate())
+	{
+		inited = loadFiles("LuaScripts");
+	}
+	else
+	{
+		inited = false;
+	}
 }
 
 
