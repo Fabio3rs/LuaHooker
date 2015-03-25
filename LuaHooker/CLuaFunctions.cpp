@@ -90,6 +90,20 @@ CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator>>(int &param)
 	return *this;
 }
 
+CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator>>(void *&param)
+{
+	if (stck <= num_params){
+		param = (void*)lua_tounsigned(L, stck);
+		++stck;
+	}
+	else
+	{
+		fail_bit = 1;
+	}
+
+	return *this;
+}
+
 CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator>>(bool &param)
 {
 	if (stck <= num_params){
@@ -114,9 +128,16 @@ int CLuaFunctions::LuaParams::rtn()
 	return ret;
 }
 
+int CLuaFunctions::LuaParams::getNumParams()
+{
+	return num_params;
+}
+
 void CLuaFunctions::registerFunctions(lua_State *L)
 {
 	lua_register(L, "showMessageBox", showMessageBox);
+	lua_register(L, "writeMemory", writeMemory);
+	lua_register(L, "readMemory", readMemory);
 }
 
 CLuaFunctions::CLuaFunctions()
@@ -143,7 +164,96 @@ int CLuaFunctions::showMessageBox(lua_State *L)
 	return p.rtn();
 }
 
-int CLuaFunctions::crashMyGame(lua_State *L)
+int CLuaFunctions::writeMemory(lua_State *L)
 {
+	LuaParams p(L);
 
+	if (p.getNumParams() >= 3){
+		injector::memory_pointer_raw mem;
+		unsigned int data = 0;
+		int size;
+
+		p >> mem >> data >> size;
+
+		if (p.fail())
+		{
+			p << false;
+			return p.rtn();
+		}
+
+		bool vp = false;
+		p >> vp;
+
+		switch (size){
+		case 1:
+			injector::WriteMemory<uint8_t>(mem, data, vp);
+			break;
+
+		case 2:
+			injector::WriteMemory<uint16_t>(mem, data, vp);
+			break;
+
+		case 4:
+			injector::WriteMemory<int32_t>(mem, data, vp);
+			break;
+
+		default:
+			p << false;
+			break;
+		}
+		p << true;
+	}
+	else
+	{
+		p << false;
+	}
+
+
+	return p.rtn();
 }
+
+int CLuaFunctions::readMemory(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() >= 2){
+		injector::memory_pointer_raw mem;
+		unsigned int size = 0;
+		p >> mem >> size;
+
+		if (p.fail())
+		{
+			p << false;
+			return p.rtn();
+		}
+
+		bool vp = false;
+		p >> vp;
+
+		switch (size){
+		case 1:
+			p << injector::ReadMemory<uint8_t>(mem, vp);
+			break;
+
+		case 2:
+			p << injector::ReadMemory<uint16_t>(mem, vp);
+			break;
+
+		case 4:
+			p << injector::ReadMemory<int32_t>(mem, vp);
+			break;
+
+		default:
+			p << false;
+			break;
+		}
+	}
+	else
+	{
+		p << false;
+	}
+
+	return p.rtn();
+}
+
+
