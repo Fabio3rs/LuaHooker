@@ -32,6 +32,7 @@ bool CLuaH::loadFiles(const std::string &path)
 			if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 			{
 				luaScript lData;
+				lData.luaState = luaState;
 				lData.filePath = path;
 				lData.fileName = data.cFileName;
 				
@@ -50,7 +51,7 @@ void CLuaH::runScripts(){
 	{
 		for (auto &scripts : pathScripts.second)
 		{
-			luaL_dofile(Lua().LuaState, std::string(pathScripts.first + barra + scripts.first).c_str());
+			luaL_dofile(scripts.second.luaState, std::string(pathScripts.first + barra + scripts.first).c_str());
 		}
 	}
 }
@@ -69,12 +70,12 @@ void __declspec(naked) CLuaH::hook_runScripts(){
 
 CLuaH::CLuaH()
 {
-	if (LuaState = luaL_newstate())
+	if (luaState = luaL_newstate())
 	{
 		retHookRunPtr = injector::MakeCALL(0x0053BFCC, hook_runScripts);
 		inited = loadFiles("LuaScripts");
 
-		CLuaFunctions::LuaF().registerFunctions(LuaState);
+		CLuaFunctions::LuaF().registerFunctions(luaState);
 	}
 	else
 	{

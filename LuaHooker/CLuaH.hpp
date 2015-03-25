@@ -8,12 +8,13 @@
 class CLuaH
 {
 	bool inited;
-	lua_State *LuaState;
+	lua_State *luaState;
 	static injector::memory_pointer_raw retHookRunPtr;
 
 public:
 	struct luaScript
 	{
+		lua_State											*luaState;
 		std::map < std::string, std::string >				savedValues;
 		std::string											filePath;
 		std::string											fileName;

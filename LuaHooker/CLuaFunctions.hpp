@@ -7,6 +7,30 @@
 class CLuaFunctions{
 public:
 	static CLuaFunctions &LuaF();
+
+	class LuaParams
+	{
+		lua_State *L;
+		int num_params, ret, stck, fail_bit;
+
+	public:
+
+		LuaParams &operator<<(const std::string &param);
+		LuaParams &operator<<(double param);
+		LuaParams &operator<<(int param);
+		LuaParams &operator<<(bool param);
+
+		LuaParams &operator>>(std::string &param);
+		LuaParams &operator>>(double &param);
+		LuaParams &operator>>(int &param);
+		LuaParams &operator>>(bool &param);
+
+		int rtn();
+
+		bool fail();
+
+		LuaParams(lua_State *state);
+	};
 	
 	static int showMessageBox(lua_State *L);
 	static int crashMyGame(lua_State *L);
