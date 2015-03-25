@@ -8,7 +8,8 @@
 class CLuaH
 {
 	bool inited;
-	lua_State *L;
+	lua_State *LuaState;
+	static injector::memory_pointer_raw retHookRunPtr;
 
 public:
 	struct luaScript
@@ -24,7 +25,11 @@ public:
 
 	inline bool					initSuccess(){ return inited; }
 	bool						loadFiles(const std::string &path);
+	void						runScripts();
 
+	/* hook functions */
+	static void					hook_runScripts();
+	
 	CLuaH();
 };
 

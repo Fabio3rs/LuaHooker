@@ -3,6 +3,9 @@
 
 #include "includes.hpp"
 #include "CLuaH.hpp"
+#include "CLuaFunctions.hpp"
+
+injector::memory_pointer_raw CLuaH::retHookRunPtr = nullptr;
 
 CLuaH &CLuaH::Lua()
 {
@@ -41,11 +44,37 @@ bool CLuaH::loadFiles(const std::string &path)
 	return true;
 }
 
+void CLuaH::runScripts(){
+	static const std::string barra("/");
+	for (auto &pathScripts : Lua().files)
+	{
+		for (auto &scripts : pathScripts.second)
+		{
+			luaL_dofile(Lua().LuaState, std::string(pathScripts.first + barra + scripts.first).c_str());
+		}
+	}
+}
+
+void __declspec(naked) CLuaH::hook_runScripts(){
+	__asm{pusha};
+
+	Lua().runScripts();
+
+	__asm{
+		popa
+			push CLuaH::retHookRunPtr
+			retn
+	};
+}
+
 CLuaH::CLuaH()
 {
-	if (L = luaL_newstate())
+	if (LuaState = luaL_newstate())
 	{
+		retHookRunPtr = injector::MakeCALL(0x0053BFCC, hook_runScripts);
 		inited = loadFiles("LuaScripts");
+
+		CLuaFunctions::LuaF().registerFunctions(LuaState);
 	}
 	else
 	{

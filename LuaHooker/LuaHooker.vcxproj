@@ -84,6 +84,7 @@
   <ItemGroup>
     <ClInclude Include="includes.hpp" />
     <ClInclude Include="CLuaH.hpp" />
+    <ClInclude Include="CLuaFunctions.hpp" />
     <ClInclude Include="Lua\lapi.h" />
     <ClInclude Include="Lua\lauxlib.h" />
     <ClInclude Include="Lua\lcode.h" />
@@ -111,6 +112,7 @@
     <ClInclude Include="Lua\lzio.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CLuaFunctions.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

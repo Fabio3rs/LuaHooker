@@ -105,6 +105,9 @@
     <ClInclude Include="Lua\lzio.h">
       <Filter>Header Files\Lua</Filter>
     </ClInclude>
+    <ClInclude Include="CLuaFunctions.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -214,6 +217,9 @@
     </ClCompile>
     <ClCompile Include="Lua\lzio.c">
       <Filter>Source Files\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="CLuaFunctions.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
