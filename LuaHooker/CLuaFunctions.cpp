@@ -1,5 +1,7 @@
 #include "CLuaFunctions.hpp"
 
+static auto ShowTextBox = injector::cstd<char(const char *, char, char, char)>::call<0x00588BE0>;
+
 CLuaFunctions &CLuaFunctions::LuaF()
 {
 	static CLuaFunctions LuaF;
@@ -138,6 +140,7 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "showMessageBox", showMessageBox);
 	lua_register(L, "writeMemory", writeMemory);
 	lua_register(L, "readMemory", readMemory);
+	lua_register(L, "showTextBox", showTextBox);
 }
 
 CLuaFunctions::CLuaFunctions()
@@ -256,4 +259,12 @@ int CLuaFunctions::readMemory(lua_State *L)
 	return p.rtn();
 }
 
+int CLuaFunctions::showTextBox(lua_State *L){
+	LuaParams p(L);
 
+	std::string str;
+	p >> str;
+	ShowTextBox(str.c_str(), 0, 0, 0);
+
+	return p.rtn();
+}

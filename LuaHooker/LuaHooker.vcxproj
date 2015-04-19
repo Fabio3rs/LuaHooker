@@ -82,6 +82,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GTA3RuntimeScript.h" />
     <ClInclude Include="includes.hpp" />
     <ClInclude Include="CLuaH.hpp" />
     <ClInclude Include="CLuaFunctions.hpp" />
@@ -122,6 +123,7 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="CLuaH.cpp" />
+    <ClCompile Include="GTA3RuntimeScript.cpp" />
     <ClCompile Include="Lua\lapi.c" />
     <ClCompile Include="Lua\lauxlib.c" />
     <ClCompile Include="Lua\lbaselib.c" />

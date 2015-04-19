@@ -51,6 +51,7 @@ public:
 	static int showMessageBox(lua_State *L);
 	static int writeMemory(lua_State *L);
 	static int readMemory(lua_State *L);
+	static int showTextBox(lua_State *L);
 
 	void registerFunctions(lua_State *L);
 
