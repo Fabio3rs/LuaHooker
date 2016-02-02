@@ -1,5 +1,10 @@
 #include "GTA3RuntimeScript.h"
 
+size_t GTA3RuntimeScript::size() const
+{
+	return code.size();
+}
+
 void GTA3RuntimeScript::run()
 {
 

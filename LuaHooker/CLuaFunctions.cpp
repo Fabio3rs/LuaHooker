@@ -1,4 +1,8 @@
 #include "CLuaFunctions.hpp"
+#include <injector\calling.hpp>
+#include <injector\injector.hpp>
+#include <injector\assembly.hpp>
+
 
 static auto ShowTextBox = injector::cstd<char(const char *, char, char, char)>::call<0x00588BE0>;
 
@@ -35,6 +39,14 @@ CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator<<(double param)
 }
 
 CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator<<(int param)
+{
+	lua_pushinteger(L, param);
+	++ret;
+
+	return *this;
+}
+
+CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator<<(size_t param)
 {
 	lua_pushinteger(L, param);
 	++ret;
@@ -95,7 +107,7 @@ CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator>>(int &param)
 CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator>>(void *&param)
 {
 	if (stck <= num_params){
-		param = (void*)lua_tounsigned(L, stck);
+		param = (void*)lua_tointeger(L, stck);
 		++stck;
 	}
 	else
@@ -141,11 +153,61 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "writeMemory", writeMemory);
 	lua_register(L, "readMemory", readMemory);
 	lua_register(L, "showTextBox", showTextBox);
+	lua_register(L, "newGTA3Script", newGTA3Script);
+	lua_register(L, "GTA3ScriptSize", GTA3ScriptSize);
+	lua_register(L, "GTA3ScriptPushOpcode", GTA3ScriptPushOpcode);
+}
+
+void CLuaFunctions::registerGlobals(lua_State *L)
+{
+
 }
 
 CLuaFunctions::CLuaFunctions()
 {
 
+}
+
+int CLuaFunctions::newGTA3Script(lua_State *L)
+{
+	LuaParams p(L);
+	std::string t;
+
+	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, p << &LuaF().GTA3Scripts[(p >> t, t)]);
+	
+	return p.rtn();
+}
+
+int CLuaFunctions::GTA3ScriptSize(lua_State *L)
+{
+	LuaParams p(L);
+	std::string t;
+
+	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, p << LuaF().GTA3Scripts[(p >> t, t)].size());
+
+	return p.rtn();
+}
+
+int CLuaFunctions::GTA3ScriptPushOpcode(lua_State *L)
+{
+	LuaParams p(L);
+
+	/*
+	script name,
+	format {%d, %f, %s; -> x}
+	*/
+
+	return p.rtn();
+}
+
+int CLuaFunctions::runGTA3Script(lua_State *L)
+{
+	LuaParams p(L);
+	std::string t;
+
+	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, LuaF().GTA3Scripts[(p >> t, t)].run());
+
+	return p.rtn();
 }
 
 int CLuaFunctions::showMessageBox(lua_State *L)

@@ -18,6 +18,8 @@ public:
 
 	void run();
 
+	size_t size() const;
+
 	GTA3RuntimeScript();
 };
 
