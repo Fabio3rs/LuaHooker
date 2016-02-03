@@ -114,6 +114,7 @@
     <ClInclude Include="Lua\lundump.h" />
     <ClInclude Include="Lua\lvm.h" />
     <ClInclude Include="Lua\lzio.h" />
+    <ClInclude Include="saving.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLog.cpp" />

@@ -42,7 +42,11 @@ public:
 		std::string											filePath;
 		std::string											fileName;
 		std::unordered_map < std::string, int >				callbacks;
+		std::unordered_map < std::string, int >				cheats;
 		std::unordered_map <std::string, unsigned int>		textureList; // useless?
+
+		bool												cheatsAdded;
+		bool												callbacksAdded;
 
 		void unload(); // clean lua state, containers, etc.
 
@@ -115,7 +119,7 @@ public:
 			type = LUA_TBOOLEAN;
 		}
 
-		void pushToLuaStack(lua_State *L){
+		void pushToLuaStack(lua_State *L) const{
 			switch (type)
 			{
 			case LUA_TNIL:
@@ -258,7 +262,7 @@ public:
 	* New script and DO NOT add it to quere
 	*/
 	luaScript					newScript(const std::string &path, const std::string &f);
-	luaScript					newScriptR(const std::string &memf);
+	luaScript					newScriptR(const std::string &memf, const std::string &name);
 
 	/*
 	* New script and add it to quere
@@ -275,11 +279,12 @@ public:
 	* Run a especific event (calls him specifics callbacks)
 	*/
 	void						runEvent(std::string name);
+	void						runCheatEvent(std::string name);
 	
 	/*
 	* Run a especific with parameteres (calls him specifics callbacks)
 	*/
-	void						runEventWithParams(const std::string &name, multiCallBackParams_t &params);
+	void						runEventWithParams(const std::string &name, const multiCallBackParams_t &params);
 
 	/*
 	* Run a internal event (calls him specifics callbacks)

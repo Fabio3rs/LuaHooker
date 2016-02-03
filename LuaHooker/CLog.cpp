@@ -15,7 +15,7 @@ int InstallExceptionCatcher(void(*cb)(const char* buffer));
 char *CLog::multiRegisterBuffer = new char[0x2000];
 
 CLog &CLog::log(void){
-	static CLog Log("Guitar++.log");
+	static CLog Log("Lua hooker.log");
 	return Log;
 }
 

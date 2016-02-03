@@ -2,9 +2,16 @@
 #include <injector\calling.hpp>
 #include <injector\injector.hpp>
 #include <injector\assembly.hpp>
-
+#include "saving.hpp"
+#include "CLog.h"
 
 static auto ShowTextBox = injector::cstd<char(const char *, char, char, char)>::call<0x00588BE0>;
+
+template<class T> void setLuaGlobal(lua_State *L, const std::string &name, const T &value)
+{
+	CLuaH::customParam(value).pushToLuaStack(L);
+	lua_setglobal(L, name.c_str());
+}
 
 CLuaFunctions &CLuaFunctions::LuaF()
 {
@@ -149,6 +156,8 @@ int CLuaFunctions::LuaParams::getNumParams()
 
 void CLuaFunctions::registerFunctions(lua_State *L)
 {
+	f();
+
 	lua_register(L, "showMessageBox", showMessageBox);
 	lua_register(L, "writeMemory", writeMemory);
 	lua_register(L, "readMemory", readMemory);
@@ -156,6 +165,78 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "newGTA3Script", newGTA3Script);
 	lua_register(L, "GTA3ScriptSize", GTA3ScriptSize);
 	lua_register(L, "GTA3ScriptPushOpcode", GTA3ScriptPushOpcode);
+	lua_register(L, "setCheat", setCheat);
+	
+
+	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
+	lua_register(L, "log_register", log_register);
+}
+
+CLuaFunctions &CLuaFunctions::f()
+{
+	static CLuaFunctions functs;
+	return functs;
+}
+
+/*
+setCallBackToEvent(event, function)
+*/
+int CLuaFunctions::setCallBackToEvent(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 2 && lua_isstring(L, 1) && lua_isfunction(L, 2)){
+		std::string eventName = lua_tostring(L, 1);
+
+		lua_pushvalue(L, 2);
+		int	fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+		auto &ls = CLuaH::Lua().getLastScript();
+
+		ls.callbacks[eventName] = fnRef;
+		ls.callbacksAdded = true;
+	}
+
+
+	return p.rtn();
+}
+
+/**/
+extern "C" void __declspec(dllexport) load_luascript_from_string(const char *script, const char *scriptname, void *cscmscmptr, bool autorun)
+{
+	auto &result = (CLuaH::Lua().files["*"][scriptname] = std::move(CLuaH::Lua().newScriptR(script, scriptname)));
+
+	if (autorun)
+	{
+		CLuaH::Lua().runScript(result);
+	}
+}
+
+extern "C" void __declspec(dllexport) luascript_run(const char *scriptpath, const char *scriptname)
+{
+	std::string lpath = scriptpath;
+
+	if (lpath == ""){ lpath = "*"; }
+
+	CLuaH::Lua().runScript(CLuaH::Lua().files[lpath][scriptname]);
+}
+
+extern "C" void __declspec(dllexport) luascript_set_str_variable(const char *scriptpath, const char *scriptname, const char *var, const char *value)
+{
+	std::string lpath = scriptpath;
+
+	if (lpath == ""){ lpath = "*"; }
+
+	setLuaGlobal(CLuaH::Lua().files[lpath][scriptname].luaState, var, value);
+}
+
+extern "C" void __declspec(dllexport) luascript_set_int_variable(const char *scriptpath, const char *scriptname, const char *var, int value)
+{
+	std::string lpath = scriptpath;
+	
+	if (lpath == ""){ lpath = "*"; }
+
+	setLuaGlobal(CLuaH::Lua().files[lpath][scriptname].luaState, var, value);
 }
 
 void CLuaFunctions::registerGlobals(lua_State *L)
@@ -163,9 +244,100 @@ void CLuaFunctions::registerGlobals(lua_State *L)
 
 }
 
+void CLuaFunctions::load_callback(int id)
+{
+	CLuaH::Lua().files["*"].clear();
+
+	f().thisSaveID = id;
+
+	try{
+		CLuaH::Lua().runEventWithParams("gameLoading", { id });
+	}
+	catch (const std::exception &e)
+	{
+		CLog::log() << e.what();
+	}
+	catch (...)
+	{
+		CLog::log() << "Unknow exception - CLuaH 'gameLoading' event";
+	}
+}
+
+
+int CLuaFunctions::setCheat(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 2 && lua_isstring(L, 1) && lua_isfunction(L, 2)){
+		std::string eventName = lua_tostring(L, 1);
+
+		lua_pushvalue(L, 2);
+		int	fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+		CLuaH::Lua().getLastScript().cheats[eventName] = fnRef;
+
+		CLuaH::Lua().getLastScript().cheatsAdded = true;
+	}
+
+	return p.rtn();
+}
+
+void CLuaFunctions::save_callback(int id)
+{
+	f().thisSaveID = id;
+
+	try{
+		CLuaH::Lua().runEventWithParams("gameSaving", { id });
+	}
+	catch (const std::exception &e)
+	{
+		CLog::log() << e.what();
+	}
+	catch (...)
+	{
+		CLog::log() << "Unknow exception - CLuaH 'gameSaving' event";
+	}
+}
+
 CLuaFunctions::CLuaFunctions()
 {
+	injector::save_manager::on_load(load_callback);
+	injector::save_manager::on_save(save_callback);
+	thisSaveID = 0;
 
+	injector::MakeInline<0x0053BFCC>([](injector::reg_pack &)
+	{
+		try{
+			CLuaH::Lua().runEvent("gameUpdate");
+
+			std::string buffer = (char*)0x969110;
+			//std::reverse(buffer.begin(), buffer.end());
+			CLuaH::Lua().runCheatEvent(buffer);
+		}
+		catch (const std::exception &e)
+		{
+			CLog::log() << e.what();
+		}
+		catch (...)
+		{
+			CLog::log() << "Unknow exception - CLuaH 'gameUpdate' event";
+		}
+	});
+}
+
+int CLuaFunctions::log_register(lua_State *L)
+{
+	LuaParams p(L);
+	std::string t;
+
+	p >> t;
+
+	if (!p.fail())
+	{
+		CLog::log() << t;
+	}
+
+	return p.rtn();
 }
 
 int CLuaFunctions::newGTA3Script(lua_State *L)

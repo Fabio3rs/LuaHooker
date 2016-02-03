@@ -62,10 +62,27 @@ public:
 	static int GTA3ScriptSize(lua_State *L);
 	static int GTA3ScriptPushOpcode(lua_State *L);
 	static int runGTA3Script(lua_State *L);
+	static int log_register(lua_State *L);
+	static int setCheat(lua_State *L);
+
+
+	static void load_callback(int id);
+	static void save_callback(int id);
+
+
+	int thisSaveID;
+
+	/*
+	* Set a lua function as callback for a event
+	*/
+	static int setCallBackToEvent(lua_State *L);
 
 	void registerFunctions(lua_State *L);
 	void registerGlobals(lua_State *L);
 
+	static CLuaFunctions &f();
+
+private:
 	CLuaFunctions();
 };
 
