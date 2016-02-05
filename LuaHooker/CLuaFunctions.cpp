@@ -154,6 +154,13 @@ namespace inject_asm
 
 	struct clback{
 		injector::memory_pointer_raw retnptr;
+		bool setted;
+
+		clback()
+		{
+			retnptr = 0u;
+			setted = 0;
+		}
 	};
 
 	void defaultfun(injector::reg_pack &pack, uintptr_t address)
@@ -225,9 +232,13 @@ namespace inject_asm
 	void inject_asm(uintptr_t address)
 	{
 		auto &s = hookmaps[address + 5];
-		s.retnptr = injector::MakeCALL(address, make_reg_pack_and_call);
 
-		if (s.retnptr){ injector::MakeCALL(address, make_reg_pack_and_call_with_return); }
+		if (!s.setted){
+			s.setted = true;
+			s.retnptr = injector::MakeCALL(address, make_reg_pack_and_call);
+
+			if (s.retnptr){ injector::MakeCALL(address, make_reg_pack_and_call_with_return); }
+		}
 	}
 };
 
