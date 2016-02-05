@@ -9,7 +9,6 @@
 
 class CLuaFunctions{
 public:
-	static CLuaFunctions &LuaF();
 
 	class LuaParams
 	{
@@ -64,6 +63,7 @@ public:
 	static int runGTA3Script(lua_State *L);
 	static int log_register(lua_State *L);
 	static int setCheat(lua_State *L);
+	static int makeHook(lua_State *L);
 
 
 	static void load_callback(int id);

@@ -43,10 +43,11 @@ public:
 		std::string											fileName;
 		std::unordered_map < std::string, int >				callbacks;
 		std::unordered_map < std::string, int >				cheats;
-		std::unordered_map <std::string, unsigned int>		textureList; // useless?
+		std::unordered_map < uintptr_t, int >				hooks;
 
 		bool												cheatsAdded;
 		bool												callbacksAdded;
+		bool												hooksAdded;
 
 		void unload(); // clean lua state, containers, etc.
 
@@ -280,6 +281,7 @@ public:
 	*/
 	void						runEvent(std::string name);
 	void						runCheatEvent(std::string name);
+	void						runHookEvent(uintptr_t address);
 	
 	/*
 	* Run a especific with parameteres (calls him specifics callbacks)

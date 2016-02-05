@@ -74,21 +74,21 @@ namespace injector
                 bPatched = true;
                 
                 // On the first time the user does a new-game/load-game...
-                make_function_hook<fnew_hook>([](fnew_hook::func_type func)
+				make_static_hook<fnew_hook>([](fnew_hook::func_type func)
                 {
                     if(IsLoad() == false) CallOnLoad(-1);
                     return func();
                 });
             
                 // On the second time+ a new game happens or whenever a load game happens...
-                make_function_hook<ldng_hook>([](ldng_hook::func_type func)
+				make_static_hook<ldng_hook>([](ldng_hook::func_type func)
                 {
                     if(IsLoad() == false)  CallOnLoad(-1);
                     return func();
                 });
                 
                 // Whenever a load game happens
-                make_function_hook<ldngb_hook>([](ldngb_hook::func_type GenericLoad, char*& e)
+				make_static_hook<ldngb_hook>([](ldngb_hook::func_type GenericLoad, char*& e)
                 {
                     auto result = GenericLoad(e);
                     if(result) CallOnLoad(GetSlot());
@@ -96,7 +96,7 @@ namespace injector
                 });
                 
                 // Whenever a save game happens
-                make_function_hook<onsav_hook>([](onsav_hook::func_type GenericSave, void*& self, int&, int& savenum)
+				make_static_hook<onsav_hook>([](onsav_hook::func_type GenericSave, void*& self, int&, int& savenum)
                 {
                     auto result = GenericSave(self, 0, savenum);
                     if(!result) CallOnSave(GetSlot());

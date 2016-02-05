@@ -13,12 +13,6 @@ template<class T> void setLuaGlobal(lua_State *L, const std::string &name, const
 	lua_setglobal(L, name.c_str());
 }
 
-CLuaFunctions &CLuaFunctions::LuaF()
-{
-	static CLuaFunctions LuaF;
-	return LuaF;
-}
-
 CLuaFunctions::LuaParams::LuaParams(lua_State *state)
 {
 	L = state;
@@ -154,6 +148,117 @@ int CLuaFunctions::LuaParams::getNumParams()
 	return num_params;
 }
 
+namespace inject_asm
+{
+	typedef std::function<void(injector::reg_pack&, uintptr_t address)> fun_t;
+
+	struct clback{
+		injector::memory_pointer_raw retnptr;
+	};
+
+	void defaultfun(injector::reg_pack &pack, uintptr_t address)
+	{
+		CLuaH::Lua().runHookEvent(address);
+	}
+
+	static std::map<uintptr_t, clback> hookmaps;
+
+	void *retnptr;
+
+	static void callwrapper(injector::reg_pack* regs)
+	{
+		auto &s = inject_asm::hookmaps[(uintptr_t)regs->retn];
+		retnptr = s.retnptr.get_raw<void*>();
+		defaultfun(*regs, (uintptr_t)regs->retn);
+	}
+
+	// Constructs a reg_pack and calls the wrapper functor
+	inline void __declspec(naked) make_reg_pack_and_call()
+	{
+		_asm
+		{
+			// Construct the reg_pack structure on the stack
+			pushad              // Pushes general purposes registers to reg_pack
+				add[esp + 12], 4     // Add 4 to reg_pack::esp 'cuz of our return pointer, let it be as before this func is called
+				pushfd              // Pushes EFLAGS to reg_pack
+
+				// Call wrapper sending reg_pack as parameter
+				push esp
+				call callwrapper
+				add esp, 4
+
+				// Destructs the reg_pack from the stack
+				sub[esp + 12 + 4], 4   // Fix reg_pack::esp before popping it (doesn't make a difference though) (+4 because eflags)
+				popfd               // Warning: Do not use any instruction that changes EFLAGS after this (-> sub affects EF!! <-)
+				popad
+
+				// Back to normal flow
+				ret
+		}
+	}
+
+	inline void __declspec(naked) make_reg_pack_and_call_with_return()
+	{
+		_asm
+		{
+			// Construct the reg_pack structure on the stack
+			pushad              // Pushes general purposes registers to reg_pack
+				add[esp + 12], 4     // Add 4 to reg_pack::esp 'cuz of our return pointer, let it be as before this func is called
+				pushfd              // Pushes EFLAGS to reg_pack
+
+				// Call wrapper sending reg_pack as parameter
+				push esp
+				call callwrapper
+				add esp, 4
+
+				// Destructs the reg_pack from the stack
+				sub[esp + 12 + 4], 4   // Fix reg_pack::esp before popping it (doesn't make a difference though) (+4 because eflags)
+				popfd               // Warning: Do not use any instruction that changes EFLAGS after this (-> sub affects EF!! <-)
+				popad
+
+				// jump
+				push retnptr
+				retn
+		}
+	}
+
+	void inject_asm(uintptr_t address)
+	{
+		auto &s = hookmaps[address + 5];
+		s.retnptr = injector::MakeCALL(address, make_reg_pack_and_call);
+
+		if (s.retnptr){ injector::MakeCALL(address, make_reg_pack_and_call_with_return); }
+	}
+};
+
+
+int CLuaFunctions::makeHook(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 2 && lua_isinteger(L, 1) && lua_isfunction(L, 2)){
+		uintptr_t ptr;
+		p >> ptr;
+
+		CLog::log() << "making hook to " + std::to_string(ptr);
+
+		inject_asm::inject_asm(ptr);
+
+		
+		lua_pushvalue(L, 2);
+		int	fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+		auto &ls = CLuaH::Lua().getLastScript();
+
+		ls.hooks[ptr + 5] = fnRef;
+		ls.hooksAdded = true;
+	}
+
+
+	return p.rtn();
+}
+
+
 void CLuaFunctions::registerFunctions(lua_State *L)
 {
 	f();
@@ -166,6 +271,7 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "GTA3ScriptSize", GTA3ScriptSize);
 	lua_register(L, "GTA3ScriptPushOpcode", GTA3ScriptPushOpcode);
 	lua_register(L, "setCheat", setCheat);
+	lua_register(L, "makeHook", makeHook);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
@@ -284,6 +390,8 @@ int CLuaFunctions::setCheat(lua_State *L)
 
 void CLuaFunctions::save_callback(int id)
 {
+	CLog::log() << "Teste s";
+
 	f().thisSaveID = id;
 
 	try{
@@ -345,7 +453,7 @@ int CLuaFunctions::newGTA3Script(lua_State *L)
 	LuaParams p(L);
 	std::string t;
 
-	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, p << &LuaF().GTA3Scripts[(p >> t, t)]);
+	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, p << &f().GTA3Scripts[(p >> t, t)]);
 	
 	return p.rtn();
 }
@@ -355,7 +463,7 @@ int CLuaFunctions::GTA3ScriptSize(lua_State *L)
 	LuaParams p(L);
 	std::string t;
 
-	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, p << LuaF().GTA3Scripts[(p >> t, t)].size());
+	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, p << f().GTA3Scripts[(p >> t, t)].size());
 
 	return p.rtn();
 }
@@ -377,7 +485,7 @@ int CLuaFunctions::runGTA3Script(lua_State *L)
 	LuaParams p(L);
 	std::string t;
 
-	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, LuaF().GTA3Scripts[(p >> t, t)].run());
+	for (int i = 0, size = p.getNumParams() - 1; i < size; i++, f().GTA3Scripts[(p >> t, t)].run());
 
 	return p.rtn();
 }

@@ -63,7 +63,7 @@ CLuaH::luaScript CLuaH::newScriptR(const std::string &memf, const std::string &n
 
 		lData.luaState = nullptr;
 
-		CLog::log() << std::string("afwed");
+		CLog::log() << ("Fail to load CLuaH::newScriptR - " + name);
 		return lData;
 	}
 
@@ -73,8 +73,8 @@ CLuaH::luaScript CLuaH::newScriptR(const std::string &memf, const std::string &n
 	lData.filePath = "*";
 	lData.fileName = "";
 
-	CLuaFunctions::LuaF().registerFunctions(lData.luaState);
-	CLuaFunctions::LuaF().registerGlobals(lData.luaState);
+	CLuaFunctions::f().registerFunctions(lData.luaState);
+	CLuaFunctions::f().registerGlobals(lData.luaState);
 
 	int load_result = luaL_loadbuffer(lData.luaState, memf.c_str(), memf.size(), name.c_str());
 
@@ -109,8 +109,8 @@ CLuaH::luaScript CLuaH::newScript(const std::string &path, const std::string &f)
 	lData.filePath = path;
 	lData.fileName = f;
 
-	CLuaFunctions::LuaF().registerFunctions(lData.luaState);
-	CLuaFunctions::LuaF().registerGlobals(lData.luaState);
+	CLuaFunctions::f().registerFunctions(lData.luaState);
+	CLuaFunctions::f().registerGlobals(lData.luaState);
 
 	int load_result = luaL_loadfile(lData.luaState, std::string(lData.filePath + barra + lData.fileName).c_str());
 
@@ -180,6 +180,23 @@ void CLuaH::runEvent(std::string name){
 			int luaindex = 0;
 
 			if (scripts.second.callbacksAdded && (luaindex = scripts.second.callbacks[name]) != 0){
+				lua_rawgeti(scripts.second.luaState, LUA_REGISTRYINDEX, luaindex);
+				if (runScript(scripts.second) != 0)
+					catchErrorString(scripts.second);
+			}
+		}
+	}
+}
+
+void CLuaH::runHookEvent(uintptr_t address){
+	static const std::string barra("/");
+	for (auto &pathScripts : Lua().files)
+	{
+		for (auto &scripts : pathScripts.second)
+		{
+			int luaindex = 0;
+
+			if (scripts.second.hooksAdded && (luaindex = scripts.second.hooks[address]) != 0){
 				lua_rawgeti(scripts.second.luaState, LUA_REGISTRYINDEX, luaindex);
 				if (runScript(scripts.second) != 0)
 					catchErrorString(scripts.second);
@@ -349,6 +366,8 @@ CLuaH::luaScript::luaScript(){
 	luaState = nullptr;
 	runAgain = true;
 	cheatsAdded = false;
+	callbacksAdded = false;
+	hooksAdded = false;
 }
 
 CLuaH::luaScript &CLuaH::luaScript::operator=(luaScript &&script){
@@ -358,7 +377,6 @@ CLuaH::luaScript &CLuaH::luaScript::operator=(luaScript &&script){
 	filePath = std::move(script.filePath);
 	fileName = std::move(script.fileName);
 	callbacks = std::move(script.callbacks);
-	textureList = std::move(script.textureList);
 
 	script.luaState = nullptr;
 
@@ -375,11 +393,11 @@ void CLuaH::luaScript::unload(){
 
 	cheatsAdded = false;
 	callbacksAdded = false;
+	hooksAdded = false;
 	savedValues.clear();
 	filePath.clear();
 	fileName.clear();
 	callbacks.clear();
-	textureList.clear();
 }
 
 /*
@@ -394,12 +412,12 @@ CLuaH::luaScript::luaScript(luaScript &L){
 	filePath = std::move(L.filePath);
 	fileName = std::move(L.fileName);
 	callbacks = std::move(L.callbacks);
-	textureList = std::move(L.textureList);
 
 	L.luaState = nullptr;
 
-	cheatsAdded = false;
-	callbacksAdded = false;
+	cheatsAdded = L.cheatsAdded;
+	callbacksAdded = L.callbacksAdded;
+	hooksAdded = L.hooksAdded;
 }
 
 CLuaH::luaScript::~luaScript(){

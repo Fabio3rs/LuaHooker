@@ -31,6 +31,11 @@ CLog::CLog(const std::string &NameOfFile){
 	LogContents += GetDateAndTime();
 	LogContents += "\n*********************************************** \n\n";
 
+	LogFile << LogContents;
+	LogFile.flush();
+	LogFile.rdbuf()->pubsetbuf(0, 0);
+	LogContents.clear();
+
 	InstallExceptionCatcher([](const char *buffer)
 	{
 		CLuaH::Lua().runEvent("emergencyLogSave");
@@ -55,8 +60,9 @@ void CLog::AddToLog(const std::string &Text){
 	Temp += ": ";
 	Temp += Text;
 	Temp += "\n";
-	LogContents += Temp;
-	//LogFile << Temp;
+
+	//LogContents += Temp;
+	LogFile << Temp;
 }
 
 void CLog::multiRegister(const char *format, ...){
@@ -75,6 +81,7 @@ void CLog::FinishLog(){
 	LogFile.clear();
 	LogFile.write(LogContents.c_str(), LogContents.size());
 	Finished = true;
+	LogContents.clear();
 }
 
 void CLog::SaveBuffer(){
