@@ -88,6 +88,10 @@ public:
 	static int showHighPriorityText(lua_State *L);
 	static int showLowPriorityText(lua_State *L);
 	static int sprintf(lua_State *L);
+	static int getSCMGlobalVariablePointer(lua_State *L);
+
+
+	static std::string CLuaFunctions::msprintf(lua_State *L);
 	
 	injector::basic_fxt_manager<std::map<uint32_t, std::string>, UpperHash> manager;
 

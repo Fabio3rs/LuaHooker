@@ -438,11 +438,11 @@ int CLuaFunctions::getPanelSelectedRow(lua_State *L)
 	return p.rtn();
 }
 
-int CLuaFunctions::sprintf(lua_State *L)
+std::string CLuaFunctions::msprintf(lua_State *L)
 {
 	LuaParams p(L);
 	char vaargspace[1024];
-	char vsprintspace[4096];
+	char vsprintspace[4096] = {0};
 	int pos = 0;
 	std::deque < std::string > strs;
 
@@ -500,8 +500,18 @@ int CLuaFunctions::sprintf(lua_State *L)
 		}
 
 		int csss = vsprintf(vsprintspace, s.c_str(), vaargspace);
+	}
 
-		p << std::string(vsprintspace);
+	return std::string(vsprintspace);
+}
+
+int CLuaFunctions::sprintf(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() >= 1 && lua_isstring(L, 1))
+	{
+		p << msprintf(L);
 	}
 
 	return p.rtn();
@@ -547,6 +557,7 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "showHighPriorityText", showHighPriorityText);
 	lua_register(L, "showLowPriorityText", showLowPriorityText);
 	lua_register(L, "sprintf", sprintf);
+	lua_register(L, "getSCMGlobalVariablePointer", getSCMGlobalVariablePointer);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
@@ -766,6 +777,20 @@ int CLuaFunctions::runGTA3Script(lua_State *L)
 	return p.rtn();
 }
 
+int CLuaFunctions::getSCMGlobalVariablePointer(lua_State *L)
+{
+	LuaParams p(L);
+
+	for (int i = 0, size = p.getNumParams(); i < size; i++)
+	{
+		unsigned int glob = 0;
+		p >> glob;
+		p << 0x00A49960 + glob * 4;
+	}
+
+	return p.rtn();
+}
+
 int CLuaFunctions::showMessageBox(lua_State *L)
 {
 	LuaParams p(L);
@@ -804,7 +829,7 @@ int CLuaFunctions::writeMemory(lua_State *L)
 		}
 
 		bool vp = false;
-		bool readfloat = (lua_isnumber(L, 3) && !lua_isinteger(L, 3));
+		bool readfloat = (lua_isnumber(L, 3) && !lua_isinteger(L, 3)) || (lua_isnumber(L, 2) && !lua_isinteger(L, 2));
 		p >> vp >> readfloat;
 
 		if (readfloat)
