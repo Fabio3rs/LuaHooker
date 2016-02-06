@@ -454,8 +454,6 @@ int CLuaFunctions::sprintf(lua_State *L)
 		int tint;
 		p >> s;
 
-
-
 		for (int i = 2, size = p.getNumParams(); i <= size; ++i)
 		{
 			switch (lua_type(L, i))
@@ -500,7 +498,6 @@ int CLuaFunctions::sprintf(lua_State *L)
 			}
 
 		}
-
 
 		int csss = vsprintf(vsprintspace, s.c_str(), vaargspace);
 
@@ -795,6 +792,7 @@ int CLuaFunctions::writeMemory(lua_State *L)
 	if (p.getNumParams() >= 3){
 		injector::memory_pointer_raw mem;
 		unsigned int data = 0;
+		double datad = 0;
 		int size;
 
 		p >> mem >> data >> size;
@@ -806,7 +804,13 @@ int CLuaFunctions::writeMemory(lua_State *L)
 		}
 
 		bool vp = false;
-		p >> vp;
+		bool readfloat = (lua_isnumber(L, 3) && !lua_isinteger(L, 3));
+		p >> vp >> readfloat;
+
+		if (readfloat)
+		{
+			datad = lua_tonumber(L, 2);
+		}
 
 		switch (size){
 		case 1:
@@ -818,7 +822,23 @@ int CLuaFunctions::writeMemory(lua_State *L)
 			break;
 
 		case 4:
-			injector::WriteMemory<int32_t>(mem, data, vp);
+			if (readfloat)
+			{
+				injector::WriteMemory<float>(mem, datad, vp);
+			}
+			else{
+				injector::WriteMemory<int32_t>(mem, data, vp);
+			}
+			break;
+
+		case 8:
+			if (readfloat)
+			{
+				injector::WriteMemory<double>(mem, datad, vp);
+			}
+			else{
+				injector::WriteMemory<int64_t>(mem, data, vp);
+			}
 			break;
 
 		default:
@@ -852,7 +872,8 @@ int CLuaFunctions::readMemory(lua_State *L)
 		}
 
 		bool vp = false;
-		p >> vp;
+		bool readfloat = (lua_isnumber(L, 2) && !lua_isinteger(L, 2));
+		p >> vp >> readfloat;
 
 		switch (size){
 		case 1:
@@ -864,7 +885,23 @@ int CLuaFunctions::readMemory(lua_State *L)
 			break;
 
 		case 4:
-			p << injector::ReadMemory<int32_t>(mem, vp);
+			if (readfloat)
+			{
+				p << injector::ReadMemory<float>(mem, vp);
+			}
+			else{
+				p << injector::ReadMemory<int32_t>(mem, vp);
+			}
+			break;
+
+		case 8:
+			if (readfloat)
+			{
+				p << injector::ReadMemory<double>(mem, vp);
+			}
+			else{
+				p << "Read memory error - can't read 8 bytes integer";
+			}
 			break;
 
 		default:
