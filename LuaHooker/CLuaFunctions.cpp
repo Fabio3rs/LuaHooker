@@ -367,6 +367,40 @@ int CLuaFunctions::setMenuCol(lua_State *L)
 auto getGamePanelActiveRow = injector::cstd <char(unsigned __int8 a1)>::call<0x005807E0>;
 auto getGamePanelSelectedRow = injector::cstd <char(unsigned __int8 a1)>::call<0x005807C0>;
 auto removeGamePanel = injector::cstd <char(unsigned __int8 a1)>::call<0x00580750>;
+auto textLowPriority = injector::cstd <void(const char *text, unsigned time, bool flag1, bool flag2)>::call<0x00580750>;
+auto textHighPriority = injector::cstd <void(const char *text, unsigned time, bool flag1, bool flag2)>::call<0x0069F0B0>;
+
+int CLuaFunctions::showLowPriorityText(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 2 && lua_isstring(L, 1) && lua_isnumber(L, 2))
+	{
+		std::string str;
+		int time;
+		p >> str >> time;
+		strncpy(f().messageBuffer, str.c_str(), sizeof(f().messageBuffer));
+		textLowPriority(f().messageBuffer, time, false, false);
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::showHighPriorityText(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 2 && lua_isstring(L, 1) && lua_isnumber(L, 2))
+	{
+		std::string str;
+		int time;
+		p >> str >> time;
+		strncpy(f().messageBuffer, str.c_str(), sizeof(f().messageBuffer));
+		textHighPriority(f().messageBuffer, time, false, false);
+	}
+
+	return p.rtn();
+}
 
 int CLuaFunctions::removePanel(lua_State *L)
 {
@@ -399,6 +433,78 @@ int CLuaFunctions::getPanelSelectedRow(lua_State *L)
 		{
 			p << getGamePanelSelectedRow(panel);
 		}
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::sprintf(lua_State *L)
+{
+	LuaParams p(L);
+	char vaargspace[1024];
+	char vsprintspace[4096];
+	int pos = 0;
+	std::deque < std::string > strs;
+
+	if (p.getNumParams() >= 1 && lua_isstring(L, 1)){
+		std::string s;
+		std::string tstr;
+		bool tbool;
+		double tdouble;
+		int tint;
+		p >> s;
+
+
+
+		for (int i = 2, size = p.getNumParams(); i <= size; ++i)
+		{
+			switch (lua_type(L, i))
+			{
+			case LUA_TNIL:
+				break;
+
+			case LUA_TNUMBER:
+				if (lua_isinteger(L, i))
+				{
+					p >> tint;
+					*(int*)&vaargspace[pos] = tint;
+					pos += sizeof(int);
+				}
+				else{
+					p >> tdouble;
+					*(double*)&vaargspace[pos] = tdouble;
+					pos += sizeof(double);
+				}
+				break;
+
+			case LUA_TBOOLEAN:
+				p >> tbool;
+				*(int*)&vaargspace[pos] = tbool;
+				pos += sizeof(int);
+				break;
+
+			case LUA_TSTRING:
+				p >> tstr;
+				strs.push_back(tstr);
+				*(char**)&vaargspace[pos] = &(strs.back()[0]);
+				pos += sizeof(char*);
+				break;
+
+			case LUA_TTABLE:
+			case LUA_TFUNCTION:
+			case LUA_TUSERDATA:
+			case LUA_TTHREAD:
+			case LUA_TLIGHTUSERDATA:
+			default:
+				break;
+			}
+
+		}
+
+
+		int csss = vsprintf(vsprintspace, s.c_str(), vaargspace);
+
+		p << std::string(vsprintspace);
 	}
 
 	return p.rtn();
@@ -441,6 +547,9 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "getPanelSelectedRow", getPanelSelectedRow);
 	lua_register(L, "getPanelActiveRow", getPanelActiveRow);
 	lua_register(L, "removePanel", removePanel);
+	lua_register(L, "showHighPriorityText", showHighPriorityText);
+	lua_register(L, "showLowPriorityText", showLowPriorityText);
+	lua_register(L, "sprintf", sprintf);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);

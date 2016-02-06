@@ -21,6 +21,8 @@ struct UpperHash
 };
 
 class CLuaFunctions{
+	char messageBuffer[2048];
+
 public:
 
 	class LuaParams
@@ -83,6 +85,9 @@ public:
 	static int getPanelActiveRow(lua_State *L);
 	static int getPanelSelectedRow(lua_State *L);
 	static int removePanel(lua_State *L);
+	static int showHighPriorityText(lua_State *L);
+	static int showLowPriorityText(lua_State *L);
+	static int sprintf(lua_State *L);
 	
 	injector::basic_fxt_manager<std::map<uint32_t, std::string>, UpperHash> manager;
 
