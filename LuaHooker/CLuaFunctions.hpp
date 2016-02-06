@@ -80,7 +80,10 @@ public:
 	static int createMenu(lua_State *L);
 	static int setMenuCol(lua_State *L);
 	static int newTextEntry(lua_State *L);
-
+	static int getPanelActiveRow(lua_State *L);
+	static int getPanelSelectedRow(lua_State *L);
+	static int removePanel(lua_State *L);
+	
 	injector::basic_fxt_manager<std::map<uint32_t, std::string>, UpperHash> manager;
 
 

@@ -364,6 +364,64 @@ int CLuaFunctions::setMenuCol(lua_State *L)
 	return p.rtn();
 }
 
+auto getGamePanelActiveRow = injector::cstd <char(unsigned __int8 a1)>::call<0x005807E0>;
+auto getGamePanelSelectedRow = injector::cstd <char(unsigned __int8 a1)>::call<0x005807C0>;
+auto removeGamePanel = injector::cstd <char(unsigned __int8 a1)>::call<0x00580750>;
+
+int CLuaFunctions::removePanel(lua_State *L)
+{
+	LuaParams p(L);
+
+	for (int i = 0, size = p.getNumParams(); i < size; ++i)
+	{
+		int panel = 0;
+		p >> panel;
+
+		if (!p.fail())
+		{
+			removeGamePanel(panel);
+		}
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::getPanelSelectedRow(lua_State *L)
+{
+	LuaParams p(L);
+
+	for (int i = 0, size = p.getNumParams(); i < size; ++i)
+	{
+		int panel = 0;
+		p >> panel;
+
+		if (!p.fail())
+		{
+			p << getGamePanelSelectedRow(panel);
+		}
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::getPanelActiveRow(lua_State *L)
+{
+	LuaParams p(L);
+
+	for (int i = 0, size = p.getNumParams(); i < size; ++i)
+	{
+		int panel = 0;
+		p >> panel;
+
+		if (!p.fail())
+		{
+			p << getGamePanelActiveRow(panel);
+		}
+	}
+
+	return p.rtn();
+}
+
 void CLuaFunctions::registerFunctions(lua_State *L)
 {
 	f();
@@ -380,6 +438,9 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "createMenu", createMenu);
 	lua_register(L, "setMenuCol", setMenuCol);
 	lua_register(L, "newTextEntry", newTextEntry);
+	lua_register(L, "getPanelSelectedRow", getPanelSelectedRow);
+	lua_register(L, "getPanelActiveRow", getPanelActiveRow);
+	lua_register(L, "removePanel", removePanel);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
@@ -517,6 +578,7 @@ void CLuaFunctions::save_callback(int id)
 
 CLuaFunctions::CLuaFunctions()
 {
+	manager.make_samp_compatible();
 	injector::save_manager::on_load(load_callback);
 	injector::save_manager::on_save(save_callback);
 	thisSaveID = 0;
