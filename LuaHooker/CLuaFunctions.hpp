@@ -64,6 +64,8 @@ public:
 	static int log_register(lua_State *L);
 	static int setCheat(lua_State *L);
 	static int makeHook(lua_State *L);
+	static int createMenu(lua_State *L);
+	static int setMenuCol(lua_State *L);
 
 
 	static void load_callback(int id);

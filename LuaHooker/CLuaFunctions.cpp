@@ -233,7 +233,8 @@ namespace inject_asm
 	{
 		auto &s = hookmaps[address + 5];
 
-		if (!s.setted){
+		if (!s.setted)
+		{
 			s.setted = true;
 			s.retnptr = injector::MakeCALL(address, make_reg_pack_and_call);
 
@@ -251,7 +252,7 @@ int CLuaFunctions::makeHook(lua_State *L)
 		uintptr_t ptr;
 		p >> ptr;
 
-		CLog::log() << "making hook to " + std::to_string(ptr);
+		//CLog::log() << "making hook to " + std::to_string(ptr);
 
 		inject_asm::inject_asm(ptr);
 
@@ -269,6 +270,82 @@ int CLuaFunctions::makeHook(lua_State *L)
 	return p.rtn();
 }
 
+int createGameMenu(const std::string &name, float px, float py, float width, int columns, bool interactive, bool background, bool alignment)
+{
+	typedef char(__cdecl *CMenuSystem__CreateNewMenu_t)(int a2, const char *a3, float a4, float a5, float a6, char a7, bool a8, bool a9, bool a10);
+	CMenuSystem__CreateNewMenu_t CMenuSystem__CreateNewMenu = (CMenuSystem__CreateNewMenu_t)0x00582300;
+	return CMenuSystem__CreateNewMenu(0, name.c_str(), px, py, width, columns, interactive, background, alignment);
+}
+
+void setMenu(int menu, int col, const std::string &header, const std::string &dat1, const std::string &dat2, const std::string &dat3, const std::string &dat4, const std::string &dat5, const std::string &dat6, const std::string &dat7, const std::string &dat8, const std::string &dat9, const std::string &dat10, const std::string &dat11, const std::string &dat12)
+{
+	typedef void **(__cdecl *sub_581E00_t)(unsigned __int8 a1, unsigned __int8 a2, const char *a3, const char *a4, const char *a5, const char *a6, const char *a7, const char *a8, const char *a9, const char *a10, const char *a11, const char *a12, const char *a13, const char *a14, const char *a15);
+	sub_581E00_t sub_581E00 = (sub_581E00_t)0x00581E00;
+
+	sub_581E00(menu, col, header.c_str(), (dat1 == "DUMMY") ? (const char*)0 : dat1.c_str(),
+		(dat2 == "DUMMY") ? (const char*)0 : dat2.c_str(),
+		(dat3 == "DUMMY") ? (const char*)0 : dat3.c_str(),
+		(dat4 == "DUMMY") ? (const char*)0 : dat4.c_str(),
+		(dat5 == "DUMMY") ? (const char*)0 : dat5.c_str(),
+		(dat6 == "DUMMY") ? (const char*)0 : dat6.c_str(),
+		(dat7 == "DUMMY") ? (const char*)0 : dat7.c_str(),
+		(dat8 == "DUMMY") ? (const char*)0 : dat8.c_str(),
+		(dat9 == "DUMMY") ? (const char*)0 : dat9.c_str(),
+		(dat10 == "DUMMY") ? (const char*)0 : dat10.c_str(),
+		(dat11 == "DUMMY") ? (const char*)0 : dat11.c_str(),
+		(dat12 == "DUMMY") ? (const char*)0 : dat12.c_str());
+}
+
+int CLuaFunctions::createMenu(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 8 && lua_isstring(L, 1) && lua_isnumber(L, 2) && lua_isnumber(L, 3) && lua_isnumber(L, 4) && lua_isinteger(L, 5) && lua_isboolean(L, 6) && lua_isboolean(L, 7) && lua_isboolean(L, 8)){
+		std::string str;
+		double px, py, wid;
+		int cols;
+		bool inter, backg, align;
+		p >> str >> px >> py >> wid >> cols >> inter >> backg >> align;
+		
+
+		if (!p.fail())
+		{
+			p << createGameMenu(str, px, py, wid, cols, inter, backg, align);
+		}
+		else{
+			CLog::log() << "create menu error";
+		}
+	}
+	else{
+		CLog::log() << "create menu error";
+	}
+
+
+	return p.rtn();
+}
+
+
+int CLuaFunctions::setMenuCol(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() > 3)
+	{
+		int menu, col;
+		std::string h, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12;
+
+		d1 = d2 = d3 = d4 = d5 = d6 = d7 = d8 = d9 = d10 = d11 = d12 = "DUMMY";
+
+		p >> menu >> col >> h >> d1 >> d2 >> d3 >> d4 >> d5 >> d6 >> d7 >> d8 >> d9 >> d10 >> d11 >> d12;
+
+		setMenu(menu, col, h, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12);
+	}
+	else{
+		CLog::log() << "setMenuCol error";
+	}
+
+	return p.rtn();
+}
 
 void CLuaFunctions::registerFunctions(lua_State *L)
 {
@@ -283,6 +360,8 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "GTA3ScriptPushOpcode", GTA3ScriptPushOpcode);
 	lua_register(L, "setCheat", setCheat);
 	lua_register(L, "makeHook", makeHook);
+	lua_register(L, "createMenu", createMenu);
+	lua_register(L, "setMenuCol", setMenuCol);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
