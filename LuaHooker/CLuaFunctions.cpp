@@ -243,7 +243,6 @@ namespace inject_asm
 	}
 };
 
-
 int CLuaFunctions::makeHook(lua_State *L)
 {
 	LuaParams p(L);
@@ -324,6 +323,24 @@ int CLuaFunctions::createMenu(lua_State *L)
 	return p.rtn();
 }
 
+int CLuaFunctions::newTextEntry(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 2)
+	{
+		std::string k, s;
+
+		p >> k >> s;
+
+		if (!p.fail())
+		{
+			f().manager.add(k.c_str(), s.c_str());
+		}
+	}
+
+	return p.rtn();
+}
 
 int CLuaFunctions::setMenuCol(lua_State *L)
 {
@@ -362,6 +379,7 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "makeHook", makeHook);
 	lua_register(L, "createMenu", createMenu);
 	lua_register(L, "setMenuCol", setMenuCol);
+	lua_register(L, "newTextEntry", newTextEntry);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);

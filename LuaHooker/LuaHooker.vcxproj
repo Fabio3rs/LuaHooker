@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CLog.h" />
+    <ClInclude Include="fxt.hpp" />
     <ClInclude Include="GTA3RuntimeScript.h" />
     <ClInclude Include="includes.hpp" />
     <ClInclude Include="CLuaH.hpp" />

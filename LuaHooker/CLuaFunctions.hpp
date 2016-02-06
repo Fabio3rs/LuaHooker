@@ -6,6 +6,19 @@
 #include "GTA3RuntimeScript.h"
 #include <map>
 #include <string>
+#include "fxt.hpp"
+
+struct UpperHash
+{
+	std::hash<std::string> hash;
+	uint32_t operator()(const char* key) const
+	{
+		//static_assert(sizeof(decltype(hash)::result_type) == sizeof(uint32_t), "");
+		std::string s(key);
+		std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+		return hash(s);
+	}
+};
 
 class CLuaFunctions{
 public:
@@ -66,6 +79,9 @@ public:
 	static int makeHook(lua_State *L);
 	static int createMenu(lua_State *L);
 	static int setMenuCol(lua_State *L);
+	static int newTextEntry(lua_State *L);
+
+	injector::basic_fxt_manager<std::map<uint32_t, std::string>, UpperHash> manager;
 
 
 	static void load_callback(int id);
