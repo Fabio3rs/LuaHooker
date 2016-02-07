@@ -557,7 +557,7 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "showHighPriorityText", showHighPriorityText);
 	lua_register(L, "showLowPriorityText", showLowPriorityText);
 	lua_register(L, "sprintf", sprintf);
-	lua_register(L, "getSCMGlobalVariablePointer", getSCMGlobalVariablePointer);
+	lua_register(L, "getSCMVarPointer", getSCMVarPointer);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
@@ -777,7 +777,7 @@ int CLuaFunctions::runGTA3Script(lua_State *L)
 	return p.rtn();
 }
 
-int CLuaFunctions::getSCMGlobalVariablePointer(lua_State *L)
+int CLuaFunctions::getSCMVarPointer(lua_State *L)
 {
 	LuaParams p(L);
 
@@ -830,7 +830,7 @@ int CLuaFunctions::writeMemory(lua_State *L)
 
 		bool vp = false;
 		bool readfloat = (lua_isnumber(L, 3) && !lua_isinteger(L, 3)) || (lua_isnumber(L, 2) && !lua_isinteger(L, 2));
-		p >> vp >> readfloat;
+		p >> readfloat >> vp;
 
 		if (readfloat)
 		{
@@ -898,7 +898,7 @@ int CLuaFunctions::readMemory(lua_State *L)
 
 		bool vp = false;
 		bool readfloat = (lua_isnumber(L, 2) && !lua_isinteger(L, 2));
-		p >> vp >> readfloat;
+		p >> readfloat >> vp;
 
 		switch (size){
 		case 1:
