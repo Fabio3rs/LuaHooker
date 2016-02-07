@@ -295,7 +295,7 @@ void setMenu(int menu, int col, const std::string &header, const std::string &da
 		(dat12 == "DUMMY") ? (const char*)0 : dat12.c_str());
 }
 
-int CLuaFunctions::createMenu(lua_State *L)
+int CLuaFunctions::createPanel(lua_State *L)
 {
 	LuaParams p(L);
 
@@ -548,7 +548,7 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "GTA3ScriptPushOpcode", GTA3ScriptPushOpcode);
 	lua_register(L, "setCheat", setCheat);
 	lua_register(L, "makeHook", makeHook);
-	lua_register(L, "createMenu", createMenu);
+	lua_register(L, "createPanel", createPanel);
 	lua_register(L, "setMenuCol", setMenuCol);
 	lua_register(L, "newTextEntry", newTextEntry);
 	lua_register(L, "getPanelSelectedRow", getPanelSelectedRow);

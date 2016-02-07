@@ -8,6 +8,7 @@
 #include <map>
 #include <deque>
 #include <unordered_map>
+#include <cstdint>
 
 class CLuaH
 {
@@ -73,6 +74,7 @@ public:
 		double num;
 		int boolean;
 		int function;
+		int64_t inumber;
 
 	public:
 		int getType() const{
@@ -111,8 +113,8 @@ public:
 		}
 
 		void set(int n){
-			num = n;
-			type = LUA_TNUMBER;
+			inumber = num = n;
+			type = LUA_TNUMBER | 0xF0000000;
 		}
 
 		void set(bool n){
@@ -124,6 +126,10 @@ public:
 			switch (type)
 			{
 			case LUA_TNIL:
+				break;
+
+			case (LUA_TNUMBER | 0xF0000000):
+				lua_pushinteger(L, inumber);
 				break;
 
 			case LUA_TNUMBER:
@@ -166,7 +172,15 @@ public:
 				break;
 
 			case LUA_TNUMBER:
-				num = lua_tonumber(L, idx);
+				if (lua_isinteger(L, idx))
+				{
+					type = (LUA_TNUMBER | 0xF0000000);
+					inumber = num = lua_tointeger(L, idx);
+				}
+				else{
+					num = lua_tonumber(L, idx);
+				}
+
 				break;
 
 			case LUA_TBOOLEAN:
@@ -201,6 +215,7 @@ public:
 		customParam(){
 			type = LUA_TNIL;
 			num = 0.0;
+			inumber = 0;
 			boolean = NULL;
 			function = NULL;
 		}
@@ -211,6 +226,7 @@ public:
 			function = NULL;
 			str = s;
 			type = LUA_TSTRING;
+			inumber = 0;
 		}
 
 		customParam(const char *s){
@@ -219,6 +235,7 @@ public:
 			function = NULL;
 			str = s;
 			type = LUA_TSTRING;
+			inumber = 0;
 		}
 
 		customParam(double n){
@@ -226,13 +243,15 @@ public:
 			function = NULL;
 			num = n;
 			type = LUA_TNUMBER;
+			inumber = 0;
 		}
 
 		customParam(int n){
 			boolean = NULL;
 			function = NULL;
 			num = n;
-			type = LUA_TNUMBER;
+			type = (LUA_TNUMBER | 0xF0000000);
+			inumber = n;
 		}
 
 		customParam(bool n){
@@ -240,6 +259,7 @@ public:
 			function = NULL;
 			boolean = n;
 			type = LUA_TBOOLEAN;
+			inumber = 0;
 		}
 	};
 
