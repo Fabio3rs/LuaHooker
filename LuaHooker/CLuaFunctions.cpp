@@ -342,7 +342,7 @@ int CLuaFunctions::newTextEntry(lua_State *L)
 	return p.rtn();
 }
 
-int CLuaFunctions::setMenuCol(lua_State *L)
+int CLuaFunctions::setPanelCol(lua_State *L)
 {
 	LuaParams p(L);
 
@@ -549,7 +549,7 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "setCheat", setCheat);
 	lua_register(L, "makeHook", makeHook);
 	lua_register(L, "createPanel", createPanel);
-	lua_register(L, "setMenuCol", setMenuCol);
+	lua_register(L, "setPanelCol", setPanelCol);
 	lua_register(L, "newTextEntry", newTextEntry);
 	lua_register(L, "getPanelSelectedRow", getPanelSelectedRow);
 	lua_register(L, "getPanelActiveRow", getPanelActiveRow);

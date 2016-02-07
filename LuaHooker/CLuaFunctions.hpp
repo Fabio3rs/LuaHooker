@@ -80,7 +80,7 @@ public:
 	static int setCheat(lua_State *L);
 	static int makeHook(lua_State *L);
 	static int createPanel(lua_State *L);
-	static int setMenuCol(lua_State *L);
+	static int setPanelCol(lua_State *L);
 	static int newTextEntry(lua_State *L);
 	static int getPanelActiveRow(lua_State *L);
 	static int getPanelSelectedRow(lua_State *L);
