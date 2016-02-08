@@ -270,6 +270,8 @@ namespace gcall{
 				add esp, gcall::popargs
 
 				mov gcall::retn, eax
+
+				ret
 		}
 	}
 };
