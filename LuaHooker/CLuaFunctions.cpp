@@ -243,6 +243,119 @@ namespace inject_asm
 	}
 };
 
+namespace gcall{
+	static void *memptr;
+	static int funptr;
+	static void *paramsPtr;
+	static int size;
+	static int popargs;
+	static int retn;
+
+	static void copyParams()
+	{
+		memcpy(memptr, paramsPtr, size);
+		CLog::log() << std::to_string((int)memptr) + " " + std::to_string((int)paramsPtr) + " " + std::to_string(size);
+	}
+
+	void __declspec(naked) call()
+	{
+		_asm
+		{
+			sub esp, gcall::size
+			mov gcall::memptr, esp
+				call gcall::copyParams
+
+				call gcall::funptr
+
+				add esp, gcall::popargs
+
+				mov gcall::retn, eax
+		}
+	}
+};
+
+
+int CLuaFunctions::callf(lua_State *L)
+{
+	LuaParams p(L);
+	
+	try{
+
+		CLog::log() << "aaaa";
+
+		if (p.getNumParams() >= 1){
+			std::vector <int32_t> args;
+			std::deque <std::string> strs;
+			std::string tmpstr;
+
+			p >> gcall::funptr;
+
+			gcall::popargs = 0;
+			p >> gcall::popargs;
+			gcall::popargs *= 4;
+
+			for (int i = 3, size = p.getNumParams(); i <= size; ++i)
+			{
+				switch (lua_type(L, i))
+				{
+				case LUA_TNIL:
+					break;
+
+				case LUA_TNUMBER:
+					if (lua_isinteger(L, i))
+					{
+						int c;
+						p >> c;
+						args.push_back(c);
+					}
+					else{
+						float c;
+						p >> c;
+						args.push_back(*(int*)&c);
+					}
+					break;
+
+				case LUA_TBOOLEAN:
+					bool c;
+					p >> c;
+					args.push_back(c);
+					break;
+
+				case LUA_TSTRING:
+					p >> tmpstr;
+					strs.push_back(tmpstr);
+					args.push_back((int)&(strs.back()[0]));
+					break;
+
+				case LUA_TTABLE:
+				case LUA_TFUNCTION:
+				case LUA_TUSERDATA:
+				case LUA_TTHREAD:
+				case LUA_TLIGHTUSERDATA:
+				default:
+					break;
+				}
+			}
+
+
+			gcall::paramsPtr = &args[0];
+			gcall::size = 4 * args.size();
+			CLog::log() << std::to_string(gcall::size) + " " + std::to_string(gcall::popargs);
+			gcall::call();
+			CLog::log() << "called";
+		}
+	}
+	catch (const std::exception &e){
+		CLog::log() << std::string("dafuq") + e.what();
+	}
+	catch (...){
+
+		CLog::log() << "dafuq";
+	}
+
+	return p.rtn();
+}
+
 int CLuaFunctions::makeHook(lua_State *L)
 {
 	LuaParams p(L);
@@ -369,6 +482,23 @@ auto getGamePanelSelectedRow = injector::cstd <char(unsigned __int8 a1)>::call<0
 auto removeGamePanel = injector::cstd <char(unsigned __int8 a1)>::call<0x00580750>;
 auto textLowPriority = injector::cstd <void(const char *text, unsigned time, bool flag1, bool flag2)>::call<0x00580750>;
 auto textHighPriority = injector::cstd <void(const char *text, unsigned time, bool flag1, bool flag2)>::call<0x0069F0B0>;
+auto CStreaming__RequestModel = injector::cstd <char(int, int)>::call<0x004087E0>;
+
+
+int CLuaFunctions::loadModel(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() == 1 && lua_isnumber(L, 1))
+	{
+		int m;
+		p >> m;
+
+		CStreaming__RequestModel(m, 0xC);
+	}
+
+	return p.rtn();
+}
 
 int CLuaFunctions::showLowPriorityText(lua_State *L)
 {
@@ -558,6 +688,8 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "showLowPriorityText", showLowPriorityText);
 	lua_register(L, "sprintf", sprintf);
 	lua_register(L, "getSCMVarPointer", getSCMVarPointer);
+	lua_register(L, "loadModel", loadModel);
+	lua_register(L, "callf", callf);
 	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);

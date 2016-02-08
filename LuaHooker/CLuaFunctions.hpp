@@ -89,6 +89,8 @@ public:
 	static int showLowPriorityText(lua_State *L);
 	static int sprintf(lua_State *L);
 	static int getSCMVarPointer(lua_State *L);
+	static int loadModel(lua_State *L);
+	static int callf(lua_State *L);
 
 
 	static std::string CLuaFunctions::msprintf(lua_State *L);
