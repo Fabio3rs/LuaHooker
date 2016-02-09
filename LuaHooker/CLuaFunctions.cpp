@@ -4,6 +4,9 @@
 #include <injector\assembly.hpp>
 #include "saving.hpp"
 #include "CLog.h"
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 
 static auto ShowTextBox = injector::cstd<char(const char *, char, char, char)>::call<0x00588BE0>;
 
@@ -243,58 +246,29 @@ namespace inject_asm
 	}
 };
 
-namespace gcall{
-	static void *memptr;
-	static int funptr;
-	static void *paramsPtr;
-	static int size;
-	static int popargs;
-	static int retn;
-
-	static void copyParams()
-	{
-		memcpy(memptr, paramsPtr, size);
-		CLog::log() << std::to_string((int)memptr) + " " + std::to_string((int)paramsPtr) + " " + std::to_string(size);
-	}
-
-	void __declspec(naked) call()
-	{
-		_asm
-		{
-			sub esp, gcall::size
-			mov gcall::memptr, esp
-				call gcall::copyParams
-
-				call gcall::funptr
-
-				add esp, gcall::popargs
-
-				mov gcall::retn, eax
-
-				ret
-		}
-	}
-};
-
-
 int CLuaFunctions::callf(lua_State *L)
 {
 	LuaParams p(L);
-	
+
+	static void *memptr;
+	static int funptr;
+	static void *paramsPtr;
+	static int paramssize;
+	static int popargs;
+	static int retn;
+
 	try{
-
-		CLog::log() << "aaaa";
-
-		if (p.getNumParams() >= 1){
+		if (p.getNumParams() >= 1)
+		{
 			std::vector <int32_t> args;
 			std::deque <std::string> strs;
 			std::string tmpstr;
 
-			p >> gcall::funptr;
+			p >> funptr;
 
-			gcall::popargs = 0;
-			p >> gcall::popargs;
-			gcall::popargs *= 4;
+			popargs = 0;
+			p >> popargs;
+			popargs *= 4;
 
 			for (int i = 3, size = p.getNumParams(); i <= size; ++i)
 			{
@@ -340,19 +314,37 @@ int CLuaFunctions::callf(lua_State *L)
 			}
 
 
-			gcall::paramsPtr = &args[0];
-			gcall::size = 4 * args.size();
-			CLog::log() << std::to_string(gcall::size) + " " + std::to_string(gcall::popargs);
-			gcall::call();
-			CLog::log() << "called";
+			paramsPtr = &args[0];
+			paramssize = 4 * args.size();
+
+			auto memcpyf = ::memcpy;
+
+			_asm
+			{
+				sub esp, paramssize
+					mov memptr, esp
+
+					pushad
+					mov ecx, paramssize
+					mov esi, paramsPtr
+					mov edi, memptr
+					rep movsb
+					popad
+
+					call funptr
+
+					add esp, popargs
+
+					mov retn, eax
+			}
 		}
 	}
 	catch (const std::exception &e){
-		CLog::log() << std::string("dafuq") + e.what();
+		CLog::log() << std::string("callf error ") + e.what();
 	}
 	catch (...){
 
-		CLog::log() << "dafuq";
+		CLog::log() << "callf unknow error";
 	}
 
 	return p.rtn();
