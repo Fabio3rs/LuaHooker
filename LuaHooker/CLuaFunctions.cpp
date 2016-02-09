@@ -337,6 +337,8 @@ int CLuaFunctions::callf(lua_State *L)
 
 					mov retn, eax
 			}
+
+			p << retn;
 		}
 	}
 	catch (const std::exception &e){
