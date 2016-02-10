@@ -341,12 +341,21 @@ int CLuaFunctions::setMakeHookReg(lua_State *L)
 
 	if (inject_asm::registers && p.getNumParams() == 2)
 	{
-		for (int i = 0, size = p.getNumParams(); i < size; i++)
-		{
-			std::string rn;
+		std::string rn;
 
-			p >> rn;
-			p << inject_asm::retregs(rn);
+		p >> rn;
+
+		if (lua_isinteger(L, 2))
+		{
+			int j;
+			p >> j;
+			p << (inject_asm::retregs(rn) = j);
+		}
+		else
+		{
+			float j;
+			p >> j;
+			p << (inject_asm::retregs(rn) = j);
 		}
 	}
 

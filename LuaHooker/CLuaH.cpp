@@ -145,8 +145,10 @@ int CLuaH::runScript(luaScript &lua){
 	static const std::string barra("/");
 
 	if (lua.luaState){
-		lastScript = &lua;
-		return lua_pcall(lua.luaState, 0, LUA_MULTRET, 0);
+		lastScript.push_back(&lua);
+		auto pcallr = lua_pcall(lua.luaState, 0, LUA_MULTRET, 0);
+		lastScript.pop_back();
+		return pcallr;
 	}
 
 	return false;
@@ -164,8 +166,10 @@ int CLuaH::runScriptWithArgs(luaScript &lua, int args){
 	static const std::string barra("/");
 
 	if (lua.luaState){
-		lastScript = &lua;
-		return lua_pcall(lua.luaState, args, LUA_MULTRET, 0);
+		lastScript.push_back(&lua);
+		auto pcallr = lua_pcall(lua.luaState, args, LUA_MULTRET, 0);
+		lastScript.pop_back();
+		return pcallr;
 	}
 
 	return false;
@@ -436,7 +440,6 @@ void CLuaH::unloadAll(){
 
 CLuaH::CLuaH()
 {
-	lastScript = nullptr;
 	inited = loadFiles("LuaScripts");
 
 	runScripts();

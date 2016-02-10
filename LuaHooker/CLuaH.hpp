@@ -326,13 +326,15 @@ public:
 	/*
 	* Get last runned (or running) script
 	*/
-	inline luaScript &getLastScript(){ return *lastScript; }
+	inline luaScript &getLastScript(){ return *lastScript.back(); }
 
 	
 
 	void unloadAll();
 
 private:
+	std::vector < luaScript* > lastScript;
+
 	CLuaH(const CLuaH&) = delete;
 
 
@@ -343,8 +345,6 @@ private:
 
 	void catchErrorString(lua_State *L);
 	void catchErrorString(const luaScript &L);
-
-	luaScript *lastScript;
 
 	CLuaH();
 };
