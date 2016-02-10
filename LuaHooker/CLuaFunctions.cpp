@@ -175,11 +175,41 @@ namespace inject_asm
 
 	void *retnptr;
 
+	injector::reg_pack* registers = nullptr;
+
+	// uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+
+	uint32_t &retregs(const std::string &r)
+	{
+		auto &v = *registers;
+		auto l = [](const std::string &s, uint32_t &p){
+			return std::pair<std::string, uint32_t*>(s, &p);
+		};
+		auto m = [](const std::string &s, void* &p){
+			return std::pair<std::string, uint32_t*>(s, (uint32_t*)&p);
+		};
+
+		const std::map <std::string, uint32_t*> data = {
+			l("edi", v.edi),
+			l("esi", v.esi),
+			l("ebp", v.ebp),
+			l("esp", v.esp),
+			l("ebx", v.ebx),
+			l("edx", v.edx),
+			l("ecx", v.ecx),
+			l("eax", v.eax),
+			m("retn", v.retn) };
+
+		return *data.at(r);
+	}
+
 	static void callwrapper(injector::reg_pack* regs)
 	{
+		registers = regs;
 		auto &s = inject_asm::hookmaps[(uintptr_t)regs->retn];
 		retnptr = s.retnptr.get_raw<void*>();
 		defaultfun(*regs, (uintptr_t)regs->retn);
+		registers = nullptr;
 	}
 
 	// Constructs a reg_pack and calls the wrapper functor
@@ -246,16 +276,111 @@ namespace inject_asm
 	}
 };
 
+
+int CLuaFunctions::clearCheatBuffer(lua_State *L)
+{
+	LuaParams p(L);
+
+	char *buffer = (char*)0x00969110;
+	*buffer = 0;
+
+	return p.rtn();
+}
+
+int CLuaFunctions::getCheatBuffer(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() > 0)
+	{
+		std::string buffer = (char*)0x00969110;
+
+		int chars = 30;
+		bool reverse = true;
+		p >> chars;
+		p >> reverse;
+
+		if (buffer.size() > chars)
+		{
+			buffer.resize(chars);
+		}
+
+		std::reverse(buffer.begin(), buffer.end());
+
+		p << buffer;
+	}
+	else{
+		p << std::string((char*)0x00969110);
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::getMakeHookReg(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (inject_asm::registers && p.getNumParams() > 0)
+	{
+		for (int i = 0, size = p.getNumParams(); i < size; i++)
+		{
+			std::string rn;
+
+			p >> rn;
+			p << inject_asm::retregs(rn);
+		}
+	}
+
+	return p.rtn();
+}
+
+
+int CLuaFunctions::setMakeHookReg(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (inject_asm::registers && p.getNumParams() == 2)
+	{
+		for (int i = 0, size = p.getNumParams(); i < size; i++)
+		{
+			std::string rn;
+
+			p >> rn;
+			p << inject_asm::retregs(rn);
+		}
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::forceFloat(lua_State *L)
+{
+	LuaParams p(L);
+
+	while (true)
+	{
+		int i;
+		p >> i;
+
+		if (p.fail())
+			break;
+
+		p << *(float*)&i;
+	}
+
+	return p.rtn();
+}
+
 int CLuaFunctions::callf(lua_State *L)
 {
 	LuaParams p(L);
 
-	static void *memptr;
-	static int funptr;
-	static void *paramsPtr;
-	static int paramssize;
-	static int popargs;
-	static int retn;
+	static void *memptr = 0;
+	static int funptr = 0;
+	static void *paramsPtr = 0;
+	static int paramssize = 0;
+	static int popargs = 0;
+	static int retn = 0;
 
 	try{
 		if (p.getNumParams() >= 1)
@@ -317,8 +442,6 @@ int CLuaFunctions::callf(lua_State *L)
 			paramsPtr = &args[0];
 			paramssize = 4 * args.size();
 
-			auto memcpyf = ::memcpy;
-
 			_asm
 			{
 				sub esp, paramssize
@@ -347,6 +470,122 @@ int CLuaFunctions::callf(lua_State *L)
 	catch (...){
 
 		CLog::log() << "callf unknow error";
+	}
+
+	return p.rtn();
+}
+
+
+int CLuaFunctions::callThiscall(lua_State *L)
+{
+	LuaParams p(L);
+
+	static void *memptr = 0;
+	static int funptr = 0;
+	static int ecxptr = 0;
+	static void *paramsPtr = 0;
+	static int paramssize = 0;
+	static int popargs = 0;
+	static int retn = 0;
+
+	try{
+		if (p.getNumParams() >= 2)
+		{
+			std::vector <int32_t> args;
+			std::deque <std::string> strs;
+			std::string tmpstr;
+
+			p >> funptr;
+			p >> ecxptr;
+
+			popargs = 0;
+			p >> popargs;
+			popargs *= 4;
+
+			for (int i = 4, size = p.getNumParams(); i <= size; ++i)
+			{
+				switch (lua_type(L, i))
+				{
+				case LUA_TNIL:
+					break;
+
+				case LUA_TNUMBER:
+					if (lua_isinteger(L, i))
+					{
+						int c;
+						p >> c;
+						args.push_back(c);
+					}
+					else{
+						float c;
+						p >> c;
+						args.push_back(*(int*)&c);
+					}
+					break;
+
+				case LUA_TBOOLEAN:
+					bool c;
+					p >> c;
+					args.push_back(c);
+					break;
+
+				case LUA_TSTRING:
+					p >> tmpstr;
+					strs.push_back(tmpstr);
+					args.push_back((int)&(strs.back()[0]));
+					break;
+
+				case LUA_TTABLE:
+				case LUA_TFUNCTION:
+				case LUA_TUSERDATA:
+				case LUA_TTHREAD:
+				case LUA_TLIGHTUSERDATA:
+				default:
+					break;
+				}
+			}
+
+
+			paramsPtr = &args[0];
+			paramssize = 4 * args.size();
+
+			int ecxbackup;
+
+			{
+				_asm
+				{
+					sub esp, paramssize
+						mov memptr, esp
+
+						pushad
+						mov ecx, paramssize
+						mov esi, paramsPtr
+						mov edi, memptr
+						rep movsb
+						popad
+
+						mov ecxbackup, ecx
+
+						mov ecx, ecxptr
+						call funptr
+
+						mov ecx, ecxbackup
+
+						add esp, popargs
+
+						mov retn, eax
+				}
+			}
+
+			p << retn;
+		}
+	}
+	catch (const std::exception &e){
+		CLog::log() << std::string("callThiscall error ") + e.what();
+	}
+	catch (...){
+
+		CLog::log() << "callThiscall unknow error";
 	}
 
 	return p.rtn();
@@ -686,7 +925,12 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "getSCMVarPointer", getSCMVarPointer);
 	lua_register(L, "loadModel", loadModel);
 	lua_register(L, "callf", callf);
-	
+	lua_register(L, "callThiscall", callThiscall);
+	lua_register(L, "forceFloat", forceFloat);
+	lua_register(L, "getMakeHookReg", getMakeHookReg);
+	lua_register(L, "setMakeHookReg", setMakeHookReg);
+	lua_register(L, "getCheatBuffer", getCheatBuffer);
+	lua_register(L, "clearCheatBuffer", clearCheatBuffer);
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
 	lua_register(L, "log_register", log_register);
@@ -833,7 +1077,7 @@ CLuaFunctions::CLuaFunctions()
 		try{
 			CLuaH::Lua().runEvent("gameUpdate");
 
-			std::string buffer = (char*)0x969110;
+			std::string buffer = (char*)0x00969110;
 			//std::reverse(buffer.begin(), buffer.end());
 			CLuaH::Lua().runCheatEvent(buffer);
 		}

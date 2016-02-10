@@ -91,6 +91,12 @@ public:
 	static int getSCMVarPointer(lua_State *L);
 	static int loadModel(lua_State *L);
 	static int callf(lua_State *L);
+	static int callThiscall(lua_State *L);
+	static int forceFloat(lua_State *L);
+	static int getMakeHookReg(lua_State *L);
+	static int setMakeHookReg(lua_State *L);
+	static int getCheatBuffer(lua_State *L);
+	static int clearCheatBuffer(lua_State *L);
 
 
 	static std::string CLuaFunctions::msprintf(lua_State *L);
