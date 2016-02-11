@@ -97,6 +97,8 @@ public:
 	static int setMakeHookReg(lua_State *L);
 	static int getCheatBuffer(lua_State *L);
 	static int clearCheatBuffer(lua_State *L);
+	static int readString(lua_State *L);
+	static int getTextEntry(lua_State *L);
 
 
 	static std::string CLuaFunctions::msprintf(lua_State *L);

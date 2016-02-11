@@ -277,6 +277,21 @@ namespace inject_asm
 };
 
 
+int CLuaFunctions::getTextEntry(lua_State *L)
+{
+	LuaParams p(L);
+
+	std::string key;
+	p >> key;
+
+	if (!p.fail())
+	{
+		p << std::string(f().manager.get(injector::raw_ptr(0x00C1B340).get(), key.c_str()));
+	}
+
+	return p.rtn();
+}
+
 int CLuaFunctions::clearCheatBuffer(lua_State *L)
 {
 	LuaParams p(L);
@@ -334,6 +349,33 @@ int CLuaFunctions::getMakeHookReg(lua_State *L)
 	return p.rtn();
 }
 
+
+int CLuaFunctions::readString(lua_State *L)
+{
+	LuaParams p(L);
+
+	if (p.getNumParams() > 0)
+	{
+		int ptr, size = -1;
+		p >> ptr;
+		p >> size;
+
+		if (size >= 0){
+			char *sbeg = (char*)ptr, *send = (char*)ptr + size;
+
+			std::string str(sbeg, send);
+
+			p << str;
+		}
+		else{
+			std::string str((char*)ptr);
+
+			p << str;
+		}
+	}
+
+	return p.rtn();
+}
 
 int CLuaFunctions::setMakeHookReg(lua_State *L)
 {
@@ -940,6 +982,8 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "setMakeHookReg", setMakeHookReg);
 	lua_register(L, "getCheatBuffer", getCheatBuffer);
 	lua_register(L, "clearCheatBuffer", clearCheatBuffer);
+	lua_register(L, "readString", readString);
+	lua_register(L, "getTextEntry", getTextEntry);
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
 	lua_register(L, "log_register", log_register);
