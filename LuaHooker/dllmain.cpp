@@ -2,6 +2,36 @@
 #include "includes.hpp"
 #include "CLuaH.hpp"
 #include "CLuaFunctions.hpp"
+#include "CLog.h"
+
+void luaInit()
+{
+	CLog::log() << "Initializing LuaHooker";
+	CLuaFunctions::f();
+	CLog::log() << (CLuaH::Lua().initSuccess()? "LuaHooker init success" : "LuaHooker failed to init");
+}
+
+void *retptr;
+
+void __declspec(naked) hook()
+{
+	_asm
+	{
+		pushad
+		call luaInit
+		popad
+
+		push retptr
+		ret
+	}
+}
+
+
+bool init()
+{
+	retptr = injector::MakeCALL(0x008246EC, hook).get();
+	return retptr != nullptr;
+}
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -11,8 +41,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		CLuaFunctions::f();
-		return CLuaH::Lua().initSuccess();
+		return init();
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
