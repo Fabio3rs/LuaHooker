@@ -110,7 +110,7 @@ namespace injectcode{
 		};
 	#pragma pack(pop)
 
-		std::vector<code> codelist;
+		std::deque<code> codelist;
 
 	public:
 		inline void addhook(uintptr_t address, callback_t c)
