@@ -139,6 +139,10 @@ namespace injectcode{
 			{
 				injector::MakeJMP(&ncode.jmp, make_reg_pack_and_call, false);
 			}
+
+			DWORD oldp;
+
+			VirtualProtect(&ncode, sizeof(code), PAGE_EXECUTE_READWRITE, &oldp);
 		}
 
 		inline dynamic_hooker()
