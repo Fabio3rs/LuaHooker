@@ -104,7 +104,7 @@ namespace injectcode{
 				retaddr = 0;
 
 				jmp = 0xE8;
-				pushaddr = 0;
+				jmpaddr = 0;
 			}
 		};
 	#pragma pack(pop)
