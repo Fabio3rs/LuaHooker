@@ -7,6 +7,7 @@
 #include <injector\injector.hpp>
 #include <algorithm>
 #include <string>
+#include <vector>
 
 namespace injectcode{
 	typedef void(__cdecl *callback_t)(injector::reg_pack&, uintptr_t address);
@@ -109,34 +110,22 @@ namespace injectcode{
 		};
 	#pragma pack(pop)
 
-		code *codelist;
-		size_t codelistcapacity, codelistsize;
+		std::vector<code> codelist;
 
 	public:
 		inline void addhook(uintptr_t address, callback_t c)
 		{
-			for (int i = 0; i < codelistsize; ++i)
+			for (auto &code : codelist)
 			{
-				if (codelist[i].pushaddr == address)
+				if (code.pushaddr == address)
 				{
 					return;
 				}
 			}
 
-			if (codelistsize >= codelistcapacity)
-			{
-				auto capacity = codelistcapacity;
-				codelistcapacity *= 2;
-
-				code *ncodelst = new code[codelistcapacity];
-
-				std::move(codelist, codelist + capacity, ncodelst);
-
-				delete[] codelist;
-				codelist = ncodelst;
-			}
-
-			code &ncode = codelist[codelistsize++];
+			code cod;
+			codelist.push_back(cod);
+			code &ncode = codelist.back();
 
 			ncode.pushaddr = address;
 			ncode.useraddr = (uintptr_t)c;
@@ -154,16 +143,12 @@ namespace injectcode{
 
 		inline dynamic_hooker()
 		{
-			codelistcapacity = 8;
-			codelistsize = 0;
-			codelist = new code[codelistcapacity];
+
 		}
 
 		inline ~dynamic_hooker()
 		{
-			codelistcapacity = 0;
-			codelistsize = 0;
-			delete[] codelist;
+
 		}
 	};
 
