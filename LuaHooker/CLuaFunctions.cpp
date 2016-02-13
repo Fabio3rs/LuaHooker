@@ -155,7 +155,7 @@ namespace inject_asm
 {
 	typedef std::function<void(injector::reg_pack&, uintptr_t address)> fun_t;
 
-	struct clback{
+	/*struct clback{
 		injector::memory_pointer_raw retnptr;
 		bool setted;
 
@@ -166,15 +166,11 @@ namespace inject_asm
 		}
 	};
 
-	void defaultfun(injector::reg_pack &pack, uintptr_t address)
-	{
-		CLuaH::Lua().runHookEvent(address);
-	}
 
 	static std::map<uintptr_t, clback> hookmaps;
 
 	void *retnptr;
-
+	*/
 	injector::reg_pack* registers = nullptr;
 
 	// uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
@@ -203,6 +199,14 @@ namespace inject_asm
 		return *data.at(r);
 	}
 
+
+	void defaultfun(injector::reg_pack &pack, uintptr_t address)
+	{
+		registers = &pack;
+		CLuaH::Lua().runHookEvent(address);
+		registers = nullptr;
+	}
+	/*
 	static void callwrapper(injector::reg_pack* regs)
 	{
 		registers = regs;
@@ -273,7 +277,7 @@ namespace inject_asm
 
 			if (s.retnptr){ injector::MakeCALL(address, make_reg_pack_and_call_with_return); }
 		}
-	}
+	}*/
 };
 
 
@@ -652,15 +656,16 @@ int CLuaFunctions::makeHook(lua_State *L)
 
 		//CLog::log() << "making hook to " + std::to_string(ptr);
 
-		inject_asm::inject_asm(ptr);
-
+		//inject_asm::inject_asm(ptr);
+		
+		f().dynamichk.addhook(ptr, inject_asm::defaultfun);
 		
 		lua_pushvalue(L, 2);
 		int	fnRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
 		auto &ls = CLuaH::Lua().getLastScript();
 
-		ls.hooks[ptr + 5] = fnRef;
+		ls.hooks[ptr] = fnRef;
 		ls.hooksAdded = true;
 	}
 

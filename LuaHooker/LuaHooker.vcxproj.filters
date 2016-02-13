@@ -123,6 +123,9 @@
     <ClInclude Include="fxt.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dynamic_hooker.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

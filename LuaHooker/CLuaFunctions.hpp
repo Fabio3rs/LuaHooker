@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include "fxt.hpp"
+#include "dynamic_hooker.hpp"
 
 struct UpperHash
 {
@@ -100,6 +101,8 @@ public:
 	static int readString(lua_State *L);
 	static int getTextEntry(lua_State *L);
 
+
+	injectcode::dynamic_hooker dynamichk;
 
 	static std::string CLuaFunctions::msprintf(lua_State *L);
 	
