@@ -7,7 +7,7 @@
 #include <injector\injector.hpp>
 #include <algorithm>
 #include <string>
-#include <vector>
+#include <deque>
 
 namespace injectcode{
 	typedef void(__cdecl *callback_t)(injector::reg_pack&, uintptr_t address);
@@ -110,7 +110,7 @@ namespace injectcode{
 		};
 	#pragma pack(pop)
 
-		std::vector<code> codelist;
+		std::deque<code> codelist;
 
 	public:
 		inline void addhook(uintptr_t address, callback_t c)
@@ -124,11 +124,12 @@ namespace injectcode{
 			}
 
 			code cod;
+			cod.pushaddr = address;
+			cod.useraddr = (uintptr_t)c;
+
 			codelist.push_back(cod);
 			code &ncode = codelist.back();
 
-			ncode.pushaddr = address;
-			ncode.useraddr = (uintptr_t)c;
 			ncode.retaddr = (uintptr_t)(void*)injector::MakeCALL((void*)address, (void*)&ncode).get();
 
 			if (ncode.retaddr != NULL)
@@ -143,7 +144,8 @@ namespace injectcode{
 
 		inline dynamic_hooker()
 		{
-
+			code codgambialgomedisseprafazerisso;
+			codelist.push_back(codgambialgomedisseprafazerisso);
 		}
 
 		inline ~dynamic_hooker()

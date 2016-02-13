@@ -153,24 +153,6 @@ int CLuaFunctions::LuaParams::getNumParams()
 
 namespace inject_asm
 {
-	typedef std::function<void(injector::reg_pack&, uintptr_t address)> fun_t;
-
-	/*struct clback{
-		injector::memory_pointer_raw retnptr;
-		bool setted;
-
-		clback()
-		{
-			retnptr = 0u;
-			setted = 0;
-		}
-	};
-
-
-	static std::map<uintptr_t, clback> hookmaps;
-
-	void *retnptr;
-	*/
 	injector::reg_pack* registers = nullptr;
 
 	// uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
@@ -199,85 +181,12 @@ namespace inject_asm
 		return *data.at(r);
 	}
 
-
 	void defaultfun(injector::reg_pack &pack, uintptr_t address)
 	{
 		registers = &pack;
 		CLuaH::Lua().runHookEvent(address);
 		registers = nullptr;
 	}
-	/*
-	static void callwrapper(injector::reg_pack* regs)
-	{
-		registers = regs;
-		auto &s = inject_asm::hookmaps[(uintptr_t)regs->retn];
-		retnptr = s.retnptr.get_raw<void*>();
-		defaultfun(*regs, (uintptr_t)regs->retn);
-		registers = nullptr;
-	}
-
-	// Constructs a reg_pack and calls the wrapper functor
-	inline void __declspec(naked) make_reg_pack_and_call()
-	{
-		_asm
-		{
-			// Construct the reg_pack structure on the stack
-			pushad              // Pushes general purposes registers to reg_pack
-				add[esp + 12], 4     // Add 4 to reg_pack::esp 'cuz of our return pointer, let it be as before this func is called
-				pushfd              // Pushes EFLAGS to reg_pack
-
-				// Call wrapper sending reg_pack as parameter
-				push esp
-				call callwrapper
-				add esp, 4
-
-				// Destructs the reg_pack from the stack
-				sub[esp + 12 + 4], 4   // Fix reg_pack::esp before popping it (doesn't make a difference though) (+4 because eflags)
-				popfd               // Warning: Do not use any instruction that changes EFLAGS after this (-> sub affects EF!! <-)
-				popad
-
-				// Back to normal flow
-				ret
-		}
-	}
-
-	inline void __declspec(naked) make_reg_pack_and_call_with_return()
-	{
-		_asm
-		{
-			// Construct the reg_pack structure on the stack
-			pushad              // Pushes general purposes registers to reg_pack
-				add[esp + 12], 4     // Add 4 to reg_pack::esp 'cuz of our return pointer, let it be as before this func is called
-				pushfd              // Pushes EFLAGS to reg_pack
-
-				// Call wrapper sending reg_pack as parameter
-				push esp
-				call callwrapper
-				add esp, 4
-
-				// Destructs the reg_pack from the stack
-				sub[esp + 12 + 4], 4   // Fix reg_pack::esp before popping it (doesn't make a difference though) (+4 because eflags)
-				popfd               // Warning: Do not use any instruction that changes EFLAGS after this (-> sub affects EF!! <-)
-				popad
-
-				// jump
-				push retnptr
-				retn
-		}
-	}
-
-	void inject_asm(uintptr_t address)
-	{
-		auto &s = hookmaps[address + 5];
-
-		if (!s.setted)
-		{
-			s.setted = true;
-			s.retnptr = injector::MakeCALL(address, make_reg_pack_and_call);
-
-			if (s.retnptr){ injector::MakeCALL(address, make_reg_pack_and_call_with_return); }
-		}
-	}*/
 };
 
 
