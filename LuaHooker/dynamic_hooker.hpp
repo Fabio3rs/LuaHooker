@@ -109,25 +109,20 @@ namespace injectcode{
 		};
 	#pragma pack(pop)
 
-		struct codstack
-		{
-			code cdsrc;
-			bool isused;
-
-			inline codstack()
-			{
-				isused = false;
-			}
-		};
-
-
 		code *codelist;
 		size_t codelistcapacity, codelistsize;
-
 
 	public:
 		inline void addhook(uintptr_t address, callback_t c)
 		{
+			for (int i = 0; i < codelistsize; ++i)
+			{
+				if (codelist[i].pushaddr == address)
+				{
+					return;
+				}
+			}
+
 			if (codelistsize >= codelistcapacity)
 			{
 				auto capacity = codelistcapacity;
