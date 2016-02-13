@@ -84,65 +84,36 @@ namespace injectcode{
 	#pragma pack(push, 1)
 		struct code
 		{
-			int8_t push;
+			uint8_t push;
 			uintptr_t pushaddr;
-			int8_t push2;
+			uint8_t push2;
 			uintptr_t useraddr;
-			int8_t push3;
+			uint8_t push3;
 			uintptr_t retaddr;
-			int8_t jmp;
+			uint8_t jmp;
 			uintptr_t jmpaddr;
-
-			inline code()
-			{
-				push = 0x68;
-				pushaddr = 0;
-
-				push2 = 0x68;
-				useraddr = 0;
-
-				push3 = 0x68;
-				retaddr = 0;
-
-				jmp = 0xE8;
-				jmpaddr = 0;
-			}
 		};
 	#pragma pack(pop)
 
 		std::deque<code> codelist;
 
 	public:
-		inline void addhook(uintptr_t address, callback_t c)
+		void addhook(uintptr_t address, callback_t c)
 		{
-			for (auto &code : codelist)
+			if (std::none_of(codelist.begin(), codelist.end(), [&](const code& x) { return x.pushaddr == address; }))
 			{
-				if (code.pushaddr == address)
-				{
-					return;
-				}
+				auto it = codelist.emplace(codelist.end(), code{
+					0x68, address,      // push address
+					0x68, uintptr_t(c), // push c
+					0x68, 0x00,         // push <retnaddr>
+					0xE8, 0x00          // jmp <target>
+				});
+
+				if (it->retaddr = injector::MakeCALL(address, &(*it)).as_int())
+					injector::MakeJMP(&it->jmp, make_reg_pack_and_call_with_return, false);
+				else
+					injector::MakeJMP(&it->jmp, make_reg_pack_and_call, false);
 			}
-
-			code cod;
-			codelist.push_back(cod);
-			code &ncode = codelist.back();
-
-			ncode.pushaddr = address;
-			ncode.useraddr = (uintptr_t)c;
-			ncode.retaddr = (uintptr_t)(void*)injector::MakeCALL((void*)address, (void*)&ncode).get();
-
-			if (ncode.retaddr != NULL)
-			{
-				injector::MakeJMP(&ncode.jmp, make_reg_pack_and_call_with_return, false);
-			}
-			else
-			{
-				injector::MakeJMP(&ncode.jmp, make_reg_pack_and_call, false);
-			}
-
-			//DWORD oldp;
-
-			//VirtualProtect(&ncode, sizeof(code), PAGE_EXECUTE_READWRITE, &oldp);
 		}
 
 		inline dynamic_hooker()
