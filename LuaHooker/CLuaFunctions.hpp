@@ -36,6 +36,7 @@ public:
 		LuaParams &operator<<(const std::string &param);
 		LuaParams &operator<<(double param);
 		LuaParams &operator<<(int param);
+		LuaParams &operator<<(int64_t param);
 		LuaParams &operator<<(bool param);
 		LuaParams &operator<<(size_t param);
 
@@ -43,6 +44,7 @@ public:
 		LuaParams &operator>>(double &param);
 		LuaParams &operator>>(int &param);
 		LuaParams &operator>>(void *&param);
+		LuaParams &operator>>(uintptr_t &param);
 		LuaParams &operator>>(bool &param);
 
 		template<class T>
@@ -100,6 +102,10 @@ public:
 	static int clearCheatBuffer(lua_State *L);
 	static int readString(lua_State *L);
 	static int getTextEntry(lua_State *L);
+	static int makeNOP(lua_State *L);
+	static int keyPressed(lua_State *L);
+	static int iniRead(lua_State *L);
+	static int iniWrite(lua_State *L);
 
 
 	injectcode::dynamic_hooker dynamichk;

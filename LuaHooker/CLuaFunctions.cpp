@@ -58,6 +58,14 @@ CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator<<(size_t param)
 	return *this;
 }
 
+CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator<<(int64_t param)
+{
+	lua_pushinteger(L, param);
+	++ret;
+
+	return *this;
+}
+
 CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator<<(bool param)
 {
 	lua_pushboolean(L, param);
@@ -112,6 +120,20 @@ CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator>>(void *&param)
 {
 	if (stck <= num_params){
 		param = (void*)lua_tointeger(L, stck);
+		++stck;
+	}
+	else
+	{
+		fail_bit = 1;
+	}
+
+	return *this;
+}
+
+CLuaFunctions::LuaParams &CLuaFunctions::LuaParams::operator>>(uintptr_t &param)
+{
+	if (stck <= num_params){
+		param = (uintptr_t)lua_tointeger(L, stck);
 		++stck;
 	}
 	else
@@ -440,6 +462,63 @@ int CLuaFunctions::callf(lua_State *L)
 	return p.rtn();
 }
 
+int CLuaFunctions::iniWrite(lua_State *L)
+{
+	LuaParams p(L);
+
+	std::string fname, section, key, data;
+	p >> fname >> section >> key >> data;
+
+	fname = ".\\" + fname;
+
+	if (!p.fail())
+	{
+		p << WritePrivateProfileStringA(section.c_str(), key.c_str(), data.c_str(), fname.c_str());
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::iniRead(lua_State *L)
+{
+	LuaParams p(L);
+
+	std::string fname, section, key, defaultval;
+	p >> fname >> section >> key;
+
+	fname = ".\\" + fname;
+
+	if (!p.fail())
+	{
+		char r[4096];
+		p >> defaultval;
+
+		GetPrivateProfileStringA(section.c_str(), key.c_str(), defaultval.c_str(), r, sizeof(r), fname.c_str());
+
+		p << std::string(r);
+	}
+
+
+	return p.rtn();
+}
+
+int CLuaFunctions::keyPressed(lua_State *L)
+{
+	LuaParams p(L);
+
+	while (true)
+	{
+		int key;
+		p >> key;
+
+		if (p.fail())
+			break;
+
+		p << (HIBYTE(GetKeyState(key)) == 0xFF);
+	}
+
+	return p.rtn();
+}
 
 int CLuaFunctions::callThiscall(lua_State *L)
 {
@@ -899,6 +978,10 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "clearCheatBuffer", clearCheatBuffer);
 	lua_register(L, "readString", readString);
 	lua_register(L, "getTextEntry", getTextEntry);
+	lua_register(L, "makeNOP", makeNOP);
+	lua_register(L, "keyPressed", keyPressed);
+	lua_register(L, "iniRead", iniRead);
+	lua_register(L, "iniWrite", iniWrite);
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
 	lua_register(L, "log_register", log_register);
@@ -1069,7 +1152,7 @@ int CLuaFunctions::log_register(lua_State *L)
 
 	if (!p.fail())
 	{
-		CLog::log() << t;
+		CLog::log() << CLuaH::Lua().getLastScript().filePath + "/" + CLuaH::Lua().getLastScript().fileName + " => " + t;
 	}
 
 	return p.rtn();
@@ -1127,6 +1210,22 @@ int CLuaFunctions::getSCMVarPointer(lua_State *L)
 		p >> glob;
 		p << 0x00A49960 + glob * 4;
 	}
+
+	return p.rtn();
+}
+
+
+int CLuaFunctions::makeNOP(lua_State *L)
+{
+	LuaParams p(L);
+
+	int mem, size;
+	p >> mem >> size;
+
+	if (!p.fail()){
+		injector::MakeNOP(mem, size);
+	}
+
 
 	return p.rtn();
 }

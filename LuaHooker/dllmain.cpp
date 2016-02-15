@@ -26,7 +26,6 @@ void __declspec(naked) hook()
 	}
 }
 
-
 bool init()
 {
 	retptr = injector::MakeCALL(0x008246EC, hook).get();
