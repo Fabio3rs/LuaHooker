@@ -15,11 +15,12 @@ namespace injectcode{
 	static uintptr_t camefromaddress;
 	static uintptr_t usrcall;
 	static uintptr_t retnptr;
+	static uintptr_t espreg;
+
 
 	inline void callwrapper(injector::reg_pack *r)
 	{
-		callback_t c = (callback_t)usrcall;
-		c(*r, camefromaddress);
+		((callback_t)usrcall)(*r, camefromaddress);
 	}
 
 	// Constructs a reg_pack and calls the wrapper functor
@@ -75,7 +76,7 @@ namespace injectcode{
 
 				// jump
 				push retnptr
-				retn
+				ret
 		}
 	}
 

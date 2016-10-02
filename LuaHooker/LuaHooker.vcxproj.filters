@@ -19,6 +19,12 @@
     <Filter Include="Source Files\Lua">
       <UniqueIdentifier>{460c68c2-22a9-4274-90c3-df31a4894d44}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Lua Hooker Functions">
+      <UniqueIdentifier>{92b16841-1915-4a49-b74d-1cd317666b7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Lua Hooker Functions">
+      <UniqueIdentifier>{1acfc733-616b-40e0-a37d-fa598af1cb7c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -125,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="dynamic_hooker.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CLHTexts.hpp">
+      <Filter>Header Files\Lua Hooker Functions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -250,6 +259,9 @@
     </ClCompile>
     <ClCompile Include="Lua\lutf8lib.c">
       <Filter>Source Files\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="CLHTexts.cpp">
+      <Filter>Source Files\Lua Hooker Functions</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

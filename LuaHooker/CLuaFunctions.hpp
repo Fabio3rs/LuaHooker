@@ -8,6 +8,56 @@
 #include <string>
 #include "fxt.hpp"
 #include "dynamic_hooker.hpp"
+#include <game_sa\CPool.h>
+#include <game_sa\CDummy.h>
+#include <game_sa\CObject.h>
+#include <game_sa\CVehicle.h>
+#include <game_sa\CPed.h>
+#include <game_sa\CAutomobile.h>
+#include <deque>
+
+#pragma pack(push, 1)
+struct CStreamedIpl{
+	//struc; (sizeof = 0x34)
+	CRect bound;          //CRect ? ; CRange2D:
+	char name[16];       //     db 16 dup(? )
+	int16_t field_20;        //dw ?
+	int16_t m_usBuildingsBegin; // dw ? ; first building index
+	int16_t m_usBuildingsEnd; // dw ? ; last building index
+	int16_t m_usDummyBegin;  // dw ? ; first dummy index
+	int16_t m_usDummyEnd; //   dw ? ; last dummy index
+	int16_t m_sTextIPL;      //dw ?
+	int16_t m_bIsInterior;   //db ?
+	bool m_bLoaded;   //db ?
+	bool m_bRequired;    //db ?
+	bool m_bDisableDynamicStreaming; //db ?
+	bool m_bNotOwnedByMission; // db ?
+	int16_t _pad1; //           db 3 dup(? )
+	//	00000034 CStreamedIpl  .//  ends
+};
+
+struct CStreamingInfo { //struc; (sizeof = 0x14); XREF:.data : ms_aInfoForModelr
+	uint16_t ll_usNext;
+	uint16_t ll_usPrev;
+	uint16_t usNextOnCd;
+	uint8_t ucFlags; // db ? ; 0x10 = loading(when); 0x2 = loading(finished); 0x12 = loading
+	uint8_t ucImgId; //        db ?
+	uint32_t iBlockOffset; ///   dd ?
+	uint32_t iBlockCount; //     dd ?
+	uint8_t uiLoadStatus; //    db ? ; 0 - not loaded 2 - requested  3 - loaded  1 - processed(it's loaded yea)
+	uint8_t _pad1[3];           //db 3 dup(? )
+	//00000014 CStreamingInfo  ends
+};
+
+#pragma pack(pop)
+
+VALIDATE_SIZE(CStreamedIpl, 0x34);
+VALIDATE_SIZE(CStreamingInfo, 0x14);
+
+static auto RwMalloc = injector::cstd<void*(size_t)>::call<0x00824257>;
+static auto RwFree = injector::cstd<void(void*)>::call<0x0082413F>;
+static CStreamingInfo *ms_aInfoForModel = injector::ReadMemory<CStreamingInfo*>(0x00407B02 + 2);
+//typedef int(__cdecl *LuaHookerAPICBFun_t)(lua_State *L);
 
 struct UpperHash
 {
@@ -23,9 +73,10 @@ struct UpperHash
 
 class CLuaFunctions{
 	char messageBuffer[2048];
+	std::deque < std::function<int(lua_State*)> > registerFunctionsAPICBs;
+	std::deque < std::function<int(lua_State*)> > registerGlobalsAPICBs;
 
 public:
-
 	class LuaParams
 	{
 		lua_State *L;
@@ -74,7 +125,6 @@ public:
 	static int showMessageBox(lua_State *L);
 	static int writeMemory(lua_State *L);
 	static int readMemory(lua_State *L);
-	static int showTextBox(lua_State *L);
 	static int newGTA3Script(lua_State *L);
 	static int GTA3ScriptSize(lua_State *L);
 	static int GTA3ScriptPushOpcode(lua_State *L);
@@ -88,8 +138,6 @@ public:
 	static int getPanelActiveRow(lua_State *L);
 	static int getPanelSelectedRow(lua_State *L);
 	static int removePanel(lua_State *L);
-	static int showHighPriorityText(lua_State *L);
-	static int showLowPriorityText(lua_State *L);
 	static int sprintf(lua_State *L);
 	static int getSCMVarPointer(lua_State *L);
 	static int loadModel(lua_State *L);
@@ -106,7 +154,10 @@ public:
 	static int keyPressed(lua_State *L);
 	static int iniRead(lua_State *L);
 	static int iniWrite(lua_State *L);
+	static int addVehicle(lua_State *L);
+	static int createVehicle(lua_State *L);
 
+	std::vector < std::string > addVehiclesList;
 
 	injectcode::dynamic_hooker dynamichk;
 
@@ -114,6 +165,8 @@ public:
 	
 	injector::basic_fxt_manager<std::map<uint32_t, std::string>, UpperHash> manager;
 
+	void registerLuaFuncsAPI(std::function<int(lua_State*)> fun);
+	void registerLuaGlobalsAPI(std::function<int(lua_State*)> fun);
 
 	static void load_callback(int id);
 	static void save_callback(int id);
@@ -133,6 +186,8 @@ public:
 
 private:
 	CLuaFunctions();
+	CLuaFunctions(CLuaFunctions&) = delete;
+	~CLuaFunctions() = default;
 };
 
 #endif

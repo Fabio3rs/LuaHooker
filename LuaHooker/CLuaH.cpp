@@ -88,7 +88,8 @@ CLuaH::luaScript CLuaH::newScriptR(const std::string &memf, const std::string &n
 	return lData;
 }
 
-CLuaH::luaScript CLuaH::newScript(const std::string &path, const std::string &f){
+CLuaH::luaScript CLuaH::newScript(const std::string &path, const std::string &f)
+{
 	static const std::string barra("/");
 	auto file_exists = [](const std::string &fileName){
 		return std::fstream(fileName).is_open();
@@ -144,10 +145,14 @@ void CLuaH::catchErrorString(const luaScript &L){
 int CLuaH::runScript(luaScript &lua){
 	static const std::string barra("/");
 
-	if (lua.luaState){
+	if (lua.luaState)
+	{
 		lastScript.push_back(&lua);
+
 		auto pcallr = lua_pcall(lua.luaState, 0, LUA_MULTRET, 0);
+
 		lastScript.pop_back();
+
 		return pcallr;
 	}
 
@@ -165,10 +170,14 @@ int CLuaH::runScript(const std::string &path, const std::string &f)
 int CLuaH::runScriptWithArgs(luaScript &lua, int args){
 	static const std::string barra("/");
 
-	if (lua.luaState){
+	if (lua.luaState)
+	{
 		lastScript.push_back(&lua);
+
 		auto pcallr = lua_pcall(lua.luaState, args, LUA_MULTRET, 0);
+
 		lastScript.pop_back();
+
 		return pcallr;
 	}
 

@@ -83,6 +83,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CLHTexts.hpp" />
     <ClInclude Include="CLog.h" />
     <ClInclude Include="dynamic_hooker.hpp" />
     <ClInclude Include="fxt.hpp" />
@@ -119,6 +120,7 @@
     <ClInclude Include="saving.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CLHTexts.cpp" />
     <ClCompile Include="CLog.cpp" />
     <ClCompile Include="CLuaFunctions.cpp" />
     <ClCompile Include="dllmain.cpp">

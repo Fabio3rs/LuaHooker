@@ -8,7 +8,7 @@
 #include <cstring>
 #include <cstdio>
 
-static auto ShowTextBox = injector::cstd<char(const char *, char, char, char)>::call<0x00588BE0>;
+//static auto ShowTextBox = injector::cstd<char(const char *, char, char, char)>::call<0x00588BE0>;
 
 template<class T> void setLuaGlobal(lua_State *L, const std::string &name, const T &value)
 {
@@ -173,6 +173,17 @@ int CLuaFunctions::LuaParams::getNumParams()
 	return num_params;
 }
 
+
+void CLuaFunctions::registerLuaFuncsAPI(std::function<int(lua_State*)> fun)
+{
+	registerFunctionsAPICBs.push_back(fun);
+}
+
+void CLuaFunctions::registerLuaGlobalsAPI(std::function<int(lua_State*)> fun)
+{
+	registerGlobalsAPICBs.push_back(fun);
+}
+
 namespace inject_asm
 {
 	injector::reg_pack* registers = nullptr;
@@ -186,7 +197,7 @@ namespace inject_asm
 			return std::pair<std::string, uint32_t*>(s, &p);
 		};
 		auto m = [](const std::string &s, void* &p){
-			return std::pair<std::string, uint32_t*>(s, (uint32_t*)&p);
+			return std::pair<std::string, uint32_t*>(s, reinterpret_cast<uint32_t*>(&p));
 		};
 
 		const std::map <std::string, uint32_t*> data = {
@@ -213,6 +224,42 @@ namespace inject_asm
 };
 
 
+int CLuaFunctions::createVehicle(lua_State *L)
+{
+	LuaParams p(L);
+
+	int model;
+	float x, y, z;
+
+	p >> model >> x >> y >> z;
+
+	if (!p.fail())
+	{
+		if (ms_aInfoForModel[model].uiLoadStatus == 1)
+		{
+
+
+		}
+	}
+
+	return p.rtn();
+}
+
+int CLuaFunctions::addVehicle(lua_State *L)
+{
+	LuaParams p(L);
+
+	std::string ln;
+	p >> ln;
+
+	if (!p.fail())
+	{
+		f().addVehiclesList.push_back(ln);
+	}
+
+	return p.rtn();
+}
+
 int CLuaFunctions::getTextEntry(lua_State *L)
 {
 	LuaParams p(L);
@@ -222,7 +269,23 @@ int CLuaFunctions::getTextEntry(lua_State *L)
 
 	if (!p.fail())
 	{
-		p << std::string(f().manager.get(injector::raw_ptr(0x00C1B340).get(), key.c_str()));
+		try{
+			const char* value = f().manager.get(injector::raw_ptr(0x00C1B340).get(), key.c_str());
+
+			if (value)
+			{
+				p << std::string(value);
+			}
+			else
+			{
+				p << false;
+				CLog::log() << "Text key " + key + " not exists.";
+			}
+		}
+		catch (const std::exception &except)
+		{
+			CLog::log() << std::string(__FILE__) + " " + std::to_string(__LINE__) + " int CLuaFunctions::getTextEntry(lua_State *L) " + CLuaH::Lua().getLastScript().fileName + except.what();
+		}
 	}
 
 	return p.rtn();
@@ -760,8 +823,6 @@ int CLuaFunctions::setPanelCol(lua_State *L)
 auto getGamePanelActiveRow = injector::cstd <char(unsigned __int8 a1)>::call<0x005807E0>;
 auto getGamePanelSelectedRow = injector::cstd <char(unsigned __int8 a1)>::call<0x005807C0>;
 auto removeGamePanel = injector::cstd <char(unsigned __int8 a1)>::call<0x00580750>;
-auto textLowPriority = injector::cstd <void(const char *text, unsigned time, bool flag1, bool flag2)>::call<0x00580750>;
-auto textHighPriority = injector::cstd <void(const char *text, unsigned time, bool flag1, bool flag2)>::call<0x0069F0B0>;
 auto CStreaming__RequestModel = injector::cstd <char(int, int)>::call<0x004087E0>;
 
 
@@ -775,38 +836,6 @@ int CLuaFunctions::loadModel(lua_State *L)
 		p >> m;
 
 		CStreaming__RequestModel(m, 0xC);
-	}
-
-	return p.rtn();
-}
-
-int CLuaFunctions::showLowPriorityText(lua_State *L)
-{
-	LuaParams p(L);
-
-	if (p.getNumParams() == 2 && lua_isstring(L, 1) && lua_isnumber(L, 2))
-	{
-		std::string str;
-		int time;
-		p >> str >> time;
-		strncpy(f().messageBuffer, str.c_str(), sizeof(f().messageBuffer));
-		textLowPriority(f().messageBuffer, time, false, false);
-	}
-
-	return p.rtn();
-}
-
-int CLuaFunctions::showHighPriorityText(lua_State *L)
-{
-	LuaParams p(L);
-
-	if (p.getNumParams() == 2 && lua_isstring(L, 1) && lua_isnumber(L, 2))
-	{
-		std::string str;
-		int time;
-		p >> str >> time;
-		strncpy(f().messageBuffer, str.c_str(), sizeof(f().messageBuffer));
-		textHighPriority(f().messageBuffer, time, false, false);
 	}
 
 	return p.rtn();
@@ -949,10 +978,19 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 {
 	f();
 
+	auto lambdaTestFun = [](lua_State *L)
+	{
+		
+
+
+
+
+		return 0;
+	};
+
 	lua_register(L, "showMessageBox", showMessageBox);
 	lua_register(L, "writeMemory", writeMemory);
 	lua_register(L, "readMemory", readMemory);
-	lua_register(L, "showTextBox", showTextBox);
 	lua_register(L, "newGTA3Script", newGTA3Script);
 	lua_register(L, "GTA3ScriptSize", GTA3ScriptSize);
 	lua_register(L, "GTA3ScriptPushOpcode", GTA3ScriptPushOpcode);
@@ -964,8 +1002,6 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "getPanelSelectedRow", getPanelSelectedRow);
 	lua_register(L, "getPanelActiveRow", getPanelActiveRow);
 	lua_register(L, "removePanel", removePanel);
-	lua_register(L, "showHighPriorityText", showHighPriorityText);
-	lua_register(L, "showLowPriorityText", showLowPriorityText);
 	lua_register(L, "sprintf", sprintf);
 	lua_register(L, "getSCMVarPointer", getSCMVarPointer);
 	lua_register(L, "loadModel", loadModel);
@@ -982,9 +1018,19 @@ void CLuaFunctions::registerFunctions(lua_State *L)
 	lua_register(L, "keyPressed", keyPressed);
 	lua_register(L, "iniRead", iniRead);
 	lua_register(L, "iniWrite", iniWrite);
+	lua_register(L, "addVehicle", addVehicle);
+	lua_register(L, "testFunction", lambdaTestFun);
+	
 
 	lua_register(L, "setCallBackToEvent", setCallBackToEvent);
 	lua_register(L, "log_register", log_register);
+
+	auto &funList = f().registerFunctionsAPICBs;
+
+	for (auto &fun : funList)
+	{
+		fun(L);
+	}
 }
 
 CLuaFunctions &CLuaFunctions::f()
@@ -1057,6 +1103,14 @@ extern "C" void __declspec(dllexport) luascript_set_int_variable(const char *scr
 void CLuaFunctions::registerGlobals(lua_State *L)
 {
 
+
+
+	auto &funList = f().registerGlobalsAPICBs;
+
+	for (auto &fun : funList)
+	{
+		fun(L);
+	}
 }
 
 void CLuaFunctions::load_callback(int id)
@@ -1116,12 +1170,47 @@ void CLuaFunctions::save_callback(int id)
 	}
 }
 
+bool addedaddVehicleHook = false;
+void *retnaddVehicleHook = 0;
+
+void addVehs()
+{
+	if (addedaddVehicleHook)
+	{
+		return;
+	}
+
+	auto fun = std::function<int(const char*)>((int(*)(const char*))0x005B6F30);
+
+	for (auto &veh : CLuaFunctions::f().addVehiclesList)
+	{
+		CLog::log() << "Adding vehicle " + std::to_string(fun(veh.c_str()));
+	}
+
+	addedaddVehicleHook = true;
+}
+
+void __declspec(naked) addVehicleHook()
+{
+	_asm
+	{
+		pushad
+			call addVehs
+		popad
+
+		push retnaddVehicleHook
+		ret
+	}
+}
+
 CLuaFunctions::CLuaFunctions()
 {
 	manager.make_samp_compatible();
 	injector::save_manager::on_load(load_callback);
 	injector::save_manager::on_save(save_callback);
 	thisSaveID = 0;
+
+	retnaddVehicleHook = injector::MakeCALL(0x005B864C, addVehicleHook).get();
 
 	injector::MakeInline<0x0053BFCC>([](injector::reg_pack &)
 	{
@@ -1377,16 +1466,6 @@ int CLuaFunctions::readMemory(lua_State *L)
 	{
 		p << false;
 	}
-
-	return p.rtn();
-}
-
-int CLuaFunctions::showTextBox(lua_State *L){
-	LuaParams p(L);
-
-	std::string str;
-	p >> str;
-	ShowTextBox(str.c_str(), 0, 0, 0);
 
 	return p.rtn();
 }
