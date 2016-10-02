@@ -10,7 +10,7 @@ CLHTexts &CLHTexts::s()
 	return inst;
 }
 
-CLHTexts &initInst = CLHTexts::s();
+static CLHTexts &initInst = CLHTexts::s();
 
 int CLHTexts::showTextBox(lua_State *L)
 {
