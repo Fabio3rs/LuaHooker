@@ -1,5 +1,7 @@
 #include "CLHVehicles.hpp"
 
+static auto generateVehicle = injector::cstd<CVehicle*(int modelId, int createdBy)>::call<0x00421440>;
+
 CLHVehicles &CLHVehicles::s()
 {
 	static CLHVehicles inst;
@@ -7,6 +9,22 @@ CLHVehicles &CLHVehicles::s()
 }
 
 static CLHVehicles &initVehInst = CLHVehicles::s();
+
+CVehicle *CLHVehicles::spawnVehicle(const vehicleData &veh)
+{
+	CVehicle *result = nullptr;
+	if (ms_aInfoForModel[veh.model].uiLoadStatus == 1)
+	{
+		result = generateVehicle(veh.model, 2);
+
+		result->m_pCoords->at.x = veh.x;
+		result->m_pCoords->at.y = veh.y;
+		result->m_pCoords->at.z = veh.z;
+
+	}
+
+	return result;
+}
 
 int CLHVehicles::createVehicle(lua_State *L)
 {
@@ -19,9 +37,18 @@ int CLHVehicles::createVehicle(lua_State *L)
 
 	if (!p.fail())
 	{
+		vehicleData data;
+		data.model = model;
+		data.x = x;
+		data.y = y;
+		data.z = z;
+
 		if (ms_aInfoForModel[model].uiLoadStatus == 1)
 		{
-
+			p << (unsigned int)s().spawnVehicle(data);
+		}
+		else
+		{
 
 		}
 	}
@@ -29,8 +56,25 @@ int CLHVehicles::createVehicle(lua_State *L)
 	return p.rtn();
 }
 
+int CLHVehicles::getVehicleFuel(lua_State *L)
+{
+	CLuaFunctions::LuaParams p(L);
+
+
+	return p.rtn();
+}
+
 void CLHVehicles::frameUpdate()
 {
+	for (auto &vehList : s().vehiclesToBeCreate)
+	{
+		CVehicle *veh = generateVehicle(vehList.model, 2);
+
+
+	}
+
+
+
 
 
 
