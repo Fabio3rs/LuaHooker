@@ -75,6 +75,7 @@ class CLuaFunctions{
 	char messageBuffer[2048];
 	std::deque < std::function<int(lua_State*)> > registerFunctionsAPICBs;
 	std::deque < std::function<int(lua_State*)> > registerGlobalsAPICBs;
+	std::deque < std::function<void(void)> > frameUpdateAPICBs;
 
 public:
 	class LuaParams
@@ -167,6 +168,7 @@ public:
 
 	void registerLuaFuncsAPI(std::function<int(lua_State*)> fun);
 	void registerLuaGlobalsAPI(std::function<int(lua_State*)> fun);
+	void registerFrameUpdateAPI(std::function<void(void)> fun);
 
 	static void load_callback(int id);
 	static void save_callback(int id);
@@ -183,6 +185,8 @@ public:
 	void registerGlobals(lua_State *L);
 
 	static CLuaFunctions &f();
+
+	void frameUpdate();
 
 private:
 	CLuaFunctions();

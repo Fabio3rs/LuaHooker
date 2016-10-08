@@ -223,26 +223,9 @@ namespace inject_asm
 	}
 };
 
-
-int CLuaFunctions::createVehicle(lua_State *L)
+void CLuaFunctions::registerFrameUpdateAPI(std::function<void(void)> fun)
 {
-	LuaParams p(L);
-
-	int model;
-	float x, y, z;
-
-	p >> model >> x >> y >> z;
-
-	if (!p.fail())
-	{
-		if (ms_aInfoForModel[model].uiLoadStatus == 1)
-		{
-
-
-		}
-	}
-
-	return p.rtn();
+	frameUpdateAPICBs.push_back(fun);
 }
 
 int CLuaFunctions::addVehicle(lua_State *L)
@@ -1203,6 +1186,14 @@ void __declspec(naked) addVehicleHook()
 	}
 }
 
+void CLuaFunctions::frameUpdate()
+{
+	for (auto &fun : frameUpdateAPICBs)
+	{
+		fun();
+	}
+}
+
 CLuaFunctions::CLuaFunctions()
 {
 	manager.make_samp_compatible();
@@ -1220,6 +1211,8 @@ CLuaFunctions::CLuaFunctions()
 			std::string buffer = (char*)0x00969110;
 			//std::reverse(buffer.begin(), buffer.end());
 			CLuaH::Lua().runCheatEvent(buffer);
+
+			f().frameUpdate();
 		}
 		catch (const std::exception &e)
 		{

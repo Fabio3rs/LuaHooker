@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _LUA_HOOKER_CLHTEXTS_HPP_
-#define _LUA_HOOKER_CLHTEXTS_HPP_
+#ifndef _LUA_HOOKER_CLHCAMERA_HPP_
+#define _LUA_HOOKER_CLHCAMERA_HPP_
 #include "CLuaFunctions.hpp"
 #include <memory>
 #include <utility>
