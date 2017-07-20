@@ -1194,6 +1194,45 @@ void CLuaFunctions::frameUpdate()
 	}
 }
 
+void gameUpdateFunc()
+{
+	try{
+		CLuaH::Lua().runEvent("gameUpdate");
+
+		std::string buffer = (char*)0x00969110;
+		//std::reverse(buffer.begin(), buffer.end());
+		CLuaH::Lua().runCheatEvent(buffer);
+
+		CLuaFunctions::f().frameUpdate();
+	}
+	catch (const std::exception &e)
+	{
+		CLog::log() << e.what();
+	}
+	catch (...)
+	{
+		CLog::log() << "Unknow exception - CLuaH 'gameUpdate' event";
+	}
+}
+
+void *gameUpdateHookRetPtr = nullptr;
+
+void __declspec(naked) gameUpdateHook()
+{
+	_asm
+	{
+		pushad
+		pushfd
+		call gameUpdateFunc
+		popfd
+		popad
+
+		push gameUpdateHookRetPtr
+		ret
+	}
+}
+
+
 CLuaFunctions::CLuaFunctions()
 {
 	manager.make_samp_compatible();
@@ -1203,7 +1242,8 @@ CLuaFunctions::CLuaFunctions()
 
 	retnaddVehicleHook = injector::MakeCALL(0x005B864C, addVehicleHook).get();
 
-	injector::MakeInline<0x0053BFCC>([](injector::reg_pack &)
+	gameUpdateHookRetPtr = injector::MakeCALL(0x0053BFCC, gameUpdateHook).get();
+	/*injector::MakeInline<0x0053BFCC>([](injector::reg_pack &)
 	{
 		try{
 			CLuaH::Lua().runEvent("gameUpdate");
@@ -1222,7 +1262,7 @@ CLuaFunctions::CLuaFunctions()
 		{
 			CLog::log() << "Unknow exception - CLuaH 'gameUpdate' event";
 		}
-	});
+	});*/
 }
 
 int CLuaFunctions::log_register(lua_State *L)
